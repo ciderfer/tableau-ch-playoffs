@@ -30,6 +30,10 @@
           <a href="#series">Portrait</a>
           <a href="#stats">Stats</a>
           <a href="#notes">Notes</a>
+          <button class="theme-action" id="themeToggle" type="button" aria-pressed="false">
+            <span aria-hidden="true">◐</span>
+            Glace
+          </button>
         </div>
       </nav>
 
@@ -41,26 +45,16 @@
             Score live, calendrier, stats, trios projetés et signaux clés pour
             suivre Montréal match par match.
           </p>
-          <div class="data-strip" aria-live="polite">
-            <span id="dataStatus">Données intégrées</span>
-            <small id="lastUpdated">Prêt pour publication</small>
-          </div>
-          <div class="hero-actions">
-            <a class="primary-action" href="#calendrier">
-              <span class="icon" aria-hidden="true">⌁</span>
-              Voir le prochain match
-            </a>
-            <button class="ghost-action" id="themeToggle" type="button" aria-pressed="false">
-              <span class="icon" aria-hidden="true">◐</span>
-              Mode glace
-            </button>
-          </div>
         </div>
 
         <aside class="scoreboard" aria-label="Résumé de la série">
           <div class="scoreboard-header">
             <span>Ronde 2</span>
             <strong id="scoreboardHeadline">Match 1 ce soir</strong>
+          </div>
+          <div class="score-meta" aria-live="polite">
+            <span id="dataStatus">Données intégrées</span>
+            <small id="lastUpdated">Prêt pour publication</small>
           </div>
           <div class="live-score" id="liveScoreCard">
             <div>

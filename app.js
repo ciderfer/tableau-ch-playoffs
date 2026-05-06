@@ -501,7 +501,7 @@ notesList.addEventListener("click", (event) => {
 themeToggle.addEventListener("click", () => {
   const enabled = document.documentElement.classList.toggle("ice-mode");
   themeToggle.setAttribute("aria-pressed", String(enabled));
-  themeToggle.lastChild.textContent = enabled ? " Mode nuit" : " Mode glace";
+  themeToggle.lastChild.textContent = enabled ? " Nuit" : " Glace";
 });
 
 renderAppData(fallbackData);

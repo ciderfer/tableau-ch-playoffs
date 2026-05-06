@@ -181,16 +181,28 @@ footer {
   backdrop-filter: blur(14px);
 }
 
-.nav-actions a {
+.nav-actions a,
+.theme-action {
   padding: 10px 14px;
+  border: 0;
   border-radius: 999px;
+  background: transparent;
   color: var(--muted);
+  font: inherit;
   font-size: 0.9rem;
+  cursor: pointer;
 }
 
-.nav-actions a:hover {
+.nav-actions a:hover,
+.theme-action:hover {
   background: rgba(255, 255, 255, 0.1);
   color: var(--text);
+}
+
+.theme-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
 }
 
 .hero-grid {
@@ -247,19 +259,17 @@ h2 {
   color: #1f3b50;
 }
 
-.data-strip {
-  display: inline-flex;
+.score-meta {
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  margin: 4px 0 22px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 8px 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(14px);
 }
 
-.data-strip span {
+.score-meta span {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -269,7 +279,7 @@ h2 {
   text-transform: uppercase;
 }
 
-.data-strip span::before {
+.score-meta span::before {
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -278,26 +288,22 @@ h2 {
   content: "";
 }
 
-.data-strip small {
+.score-meta small {
   color: var(--muted);
   font-weight: 800;
 }
 
-:root.ice-mode .data-strip,
-:root.ice-mode .ghost-action,
+:root.ice-mode .score-meta,
 :root.ice-mode .nav-actions {
   background: rgba(255, 255, 255, 0.62);
 }
 
-.hero-actions,
 .composer-row {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
 }
 
-.primary-action,
-.ghost-action,
 .note-composer button {
   display: inline-flex;
   align-items: center;
@@ -310,22 +316,6 @@ h2 {
   font: inherit;
   font-weight: 800;
   cursor: pointer;
-}
-
-.primary-action {
-  background: var(--red);
-  color: #fff;
-  box-shadow: 0 14px 36px rgba(215, 25, 63, 0.32);
-}
-
-.ghost-action {
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.09);
-  color: var(--text);
-}
-
-.icon {
-  font-size: 1.15em;
 }
 
 .scoreboard,
@@ -1040,9 +1030,6 @@ footer a {
     font-size: clamp(2.75rem, 16vw, 4.5rem);
   }
 
-  .hero-actions,
-  .primary-action,
-  .ghost-action,
   .composer-row {
     width: 100%;
   }
