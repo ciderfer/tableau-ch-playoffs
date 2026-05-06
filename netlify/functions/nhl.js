@@ -350,12 +350,22 @@ function seriesScore(games, teamCode, opponentCode) {
 
 function toScheduleRow(game, index) {
   const live = game.gameState === "LIVE" || game.gameState === "CRIT";
+  const done = isFinal(game);
+  const isMTLHome = game.homeTeam?.abbrev === "MTL";
+  let tag;
+  let kind;
+  if (live) { tag = "En direct"; kind = "live"; }
+  else if (done) { tag = "Final"; kind = "final"; }
+  else if (isMTLHome) { tag = "Maison"; kind = "home"; }
+  else { tag = "Route"; kind = "away"; }
+
   return {
     date: shortDate(game.gameDate || game.startTimeUTC),
     label: game.seriesGameNumber ? `Match ${game.seriesGameNumber}` : `Match ${index + 1}`,
     detail: gameDetail(game),
-    tag: tagFor(game),
-    state: live ? "live" : isFinal(game) ? "final" : "upcoming"
+    tag,
+    kind,
+    state: live ? "live" : done ? "final" : "upcoming"
   };
 }
 
@@ -415,18 +425,6 @@ function statusText(game) {
   }
 
   return game.seriesGameNumber ? `Match ${game.seriesGameNumber} à venir` : "Prochain match";
-}
-
-function tagFor(game) {
-  if (game.gameState === "LIVE" || game.gameState === "CRIT") {
-    return "Live";
-  }
-
-  if (isFinal(game)) {
-    return "Final";
-  }
-
-  return "À venir";
 }
 
 function shortDate(value) {

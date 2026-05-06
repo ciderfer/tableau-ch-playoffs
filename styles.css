@@ -597,6 +597,23 @@ h2 {
   font-size: 2.9rem;
   line-height: 0.9;
   font-variant-numeric: tabular-nums;
+  transition: color 0.3s var(--ease);
+}
+
+.live-score strong.score-flash {
+  animation: scoreFlash 1.2s var(--ease);
+}
+
+@keyframes scoreFlash {
+  0% { color: var(--gold); transform: scale(1.18); text-shadow: 0 0 24px rgba(242, 193, 78, 0.7); }
+  60% { color: var(--gold); text-shadow: 0 0 12px rgba(242, 193, 78, 0.3); }
+  100% { color: inherit; transform: scale(1); text-shadow: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-score strong.score-flash {
+    animation: none;
+  }
 }
 
 .game-clock {
@@ -813,6 +830,36 @@ main {
   background: rgba(215, 25, 63, 0.2);
   color: #ffd1dc;
   animation: pulse 1.6s ease-in-out infinite;
+}
+
+.badge.is-home {
+  background: rgba(215, 25, 63, 0.18);
+  color: #ffd1dc;
+}
+
+.badge.is-away {
+  background: rgba(12, 93, 171, 0.22);
+  color: #cfe3ff;
+}
+
+.badge.is-final {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+}
+
+:root.ice-mode .badge.is-home {
+  background: rgba(215, 25, 63, 0.18);
+  color: #8c1230;
+}
+
+:root.ice-mode .badge.is-away {
+  background: rgba(12, 93, 171, 0.16);
+  color: #0c4577;
+}
+
+:root.ice-mode .badge.is-final {
+  background: rgba(7, 38, 62, 0.08);
+  color: #455a6f;
 }
 
 :root.ice-mode .badge,
@@ -1432,8 +1479,14 @@ footer a:hover {
     min-height: 0;
   }
 
+  .hero-copy {
+    order: 2;
+  }
+
   .scoreboard {
+    order: 1;
     max-width: 560px;
+    margin-bottom: 8px;
   }
 
   .dashboard,

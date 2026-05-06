@@ -76,13 +76,13 @@ const fallbackData = {
     }
   ],
   games: [
-    { date: "6 mai", label: "Match 1", detail: "MTL @ BUF · KeyBank Center · 19 h HE", tag: "Ce soir" },
-    { date: "8 mai", label: "Match 2", detail: "MTL @ BUF · KeyBank Center", tag: "Route" },
-    { date: "10 mai", label: "Match 3", detail: "BUF @ MTL · Centre Bell", tag: "Maison" },
-    { date: "12 mai", label: "Match 4", detail: "BUF @ MTL · Centre Bell", tag: "Maison" },
-    { date: "14 mai", label: "Match 5", detail: "MTL @ BUF · si nécessaire", tag: "Au besoin" },
-    { date: "16 mai", label: "Match 6", detail: "BUF @ MTL · si nécessaire", tag: "Au besoin" },
-    { date: "18 mai", label: "Match 7", detail: "MTL @ BUF · si nécessaire", tag: "Décisif" }
+    { date: "6 mai", label: "Match 1", detail: "MTL @ BUF · KeyBank Center · 19 h HE", tag: "Ce soir", kind: "away" },
+    { date: "8 mai", label: "Match 2", detail: "MTL @ BUF · KeyBank Center", tag: "Route", kind: "away" },
+    { date: "10 mai", label: "Match 3", detail: "BUF @ MTL · Centre Bell", tag: "Maison", kind: "home" },
+    { date: "12 mai", label: "Match 4", detail: "BUF @ MTL · Centre Bell", tag: "Maison", kind: "home" },
+    { date: "14 mai", label: "Match 5", detail: "MTL @ BUF · si nécessaire", tag: "Au besoin", kind: "away" },
+    { date: "16 mai", label: "Match 6", detail: "BUF @ MTL · si nécessaire", tag: "Au besoin", kind: "home" },
+    { date: "18 mai", label: "Match 7", detail: "MTL @ BUF · si nécessaire", tag: "Décisif", kind: "away" }
   ]
 };
 
@@ -245,12 +245,23 @@ function dedupeGames(games) {
 }
 
 function toScheduleRow(game, index) {
+  const isMTLHome = game.homeTeam?.abbrev === "MTL";
+  const live = isLiveState(game);
+  const done = isFinal(game);
+  let tag;
+  let kind;
+  if (live) { tag = "En direct"; kind = "live"; }
+  else if (done) { tag = "Final"; kind = "final"; }
+  else if (isMTLHome) { tag = "Maison"; kind = "home"; }
+  else { tag = "Route"; kind = "away"; }
+
   return {
     date: formatDate(game.gameDate || game.startTimeUTC),
     label: game.seriesGameNumber ? `Match ${game.seriesGameNumber}` : `Match ${index + 1}`,
     detail: gameDetail(game),
-    tag: isFinal(game) ? "Final" : index === 0 ? "À venir" : "Calendrier",
-    state: isLiveState(game) ? "live" : isFinal(game) ? "final" : "upcoming"
+    tag,
+    kind,
+    state: live ? "live" : done ? "final" : "upcoming"
   };
 }
 
@@ -363,16 +374,24 @@ function renderAppData(data) {
   if (!data) return;
 
   els.scheduleList.innerHTML = data.games
-    .map((game) => `
+    .map((game) => {
+      const kind = game.kind || (game.state === "live" ? "live" : game.state === "final" ? "final" : "");
+      const classes = ["badge"];
+      if (kind === "live") classes.push("is-live");
+      else if (kind === "final") classes.push("is-final");
+      else if (kind === "home") classes.push("is-home");
+      else if (kind === "away") classes.push("is-away");
+      return `
       <article class="game-row">
         <time>${escapeHtml(game.date)}</time>
         <div>
           <strong>${escapeHtml(game.label)}</strong>
           <small>${escapeHtml(game.detail)}</small>
         </div>
-        <span class="badge${game.state === "live" ? " is-live" : ""}">${escapeHtml(game.tag)}</span>
+        <span class="${classes.join(" ")}">${escapeHtml(game.tag)}</span>
       </article>
-    `)
+    `;
+    })
     .join("");
 
   els.dataStatus.textContent = data.source === "live" ? "Données NHL en direct" : "Données intégrées";
@@ -395,6 +414,9 @@ function renderAppData(data) {
 }
 
 function renderGameStatus(status) {
+  const prevAway = lastStatus?.awayScore;
+  const prevHome = lastStatus?.homeScore;
+
   els.awayCode.textContent = status.awayCode;
   els.homeCode.textContent = status.homeCode;
   els.awayScore.textContent = status.awayScore;
@@ -403,12 +425,27 @@ function renderGameStatus(status) {
   els.gameClock.textContent = status.detail;
   els.liveScoreCard.classList.toggle("is-live", Boolean(status.isLive));
 
+  if (Number.isInteger(prevAway) && status.awayScore > prevAway) {
+    flashScore(els.awayScore);
+  }
+  if (Number.isInteger(prevHome) && status.homeScore > prevHome) {
+    flashScore(els.homeScore);
+  }
+
   els.miniAwayCode.textContent = status.awayCode;
   els.miniHomeCode.textContent = status.homeCode;
   els.miniAwayScore.textContent = status.awayScore;
   els.miniHomeScore.textContent = status.homeScore;
   els.miniState.textContent = status.isLive ? `${status.state} · ${status.detail}` : status.detail || status.state;
   els.miniScore.classList.toggle("is-live", Boolean(status.isLive));
+}
+
+function flashScore(el) {
+  if (!el) return;
+  el.classList.remove("score-flash");
+  // Force reflow so the animation can replay.
+  void el.offsetWidth;
+  el.classList.add("score-flash");
 }
 
 function renderTeamStats(teams) {
