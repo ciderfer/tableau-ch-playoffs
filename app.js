@@ -10,7 +10,8 @@ const fallbackData = {
     homeScore: 0,
     state: "Avant-match",
     detail: "19 h HE",
-    isLive: false
+    isLive: false,
+    startTimeUTC: "2026-05-06T23:00:00Z"
   },
   mtlRecord: "48-24-10",
   opponentRecord: "50-23-9",
@@ -108,51 +109,93 @@ const factors = [
   }
 ];
 
-const scheduleList = document.querySelector("#scheduleList");
-const factorGrid = document.querySelector("#factorGrid");
-const noteForm = document.querySelector("#noteForm");
-const noteInput = document.querySelector("#noteInput");
-const notesList = document.querySelector("#notesList");
-const themeToggle = document.querySelector("#themeToggle");
-const dataStatus = document.querySelector("#dataStatus");
-const lastUpdated = document.querySelector("#lastUpdated");
-const scoreboardHeadline = document.querySelector("#scoreboardHeadline");
-const seriesScore = document.querySelector("#seriesScore");
-const mtlRecord = document.querySelector("#mtlRecord");
-const opponentRecord = document.querySelector("#opponentRecord");
-const mtlLogo = document.querySelector("#mtlLogo");
-const opponentLogo = document.querySelector("#opponentLogo");
-const awayCode = document.querySelector("#awayCode");
-const homeCode = document.querySelector("#homeCode");
-const awayScore = document.querySelector("#awayScore");
-const homeScore = document.querySelector("#homeScore");
-const gameState = document.querySelector("#gameState");
-const gameClock = document.querySelector("#gameClock");
-const liveScoreCard = document.querySelector("#liveScoreCard");
-const teamStatsGrid = document.querySelector("#teamStatsGrid");
-const leaderGrid = document.querySelector("#leaderGrid");
-const lineupGrid = document.querySelector("#lineupGrid");
-const lineupStatus = document.querySelector("#lineupStatus");
+const $ = (selector) => document.querySelector(selector);
 
-const storageKey = "tableau-ch-notes";
+const els = {
+  scheduleList: $("#scheduleList"),
+  factorGrid: $("#factorGrid"),
+  noteForm: $("#noteForm"),
+  noteInput: $("#noteInput"),
+  notesList: $("#notesList"),
+  notesMeta: $("#notesMeta"),
+  copyNotes: $("#copyNotes"),
+  clearNotes: $("#clearNotes"),
+  themeToggle: $("#themeToggle"),
+  themeLabel: document.querySelector("#themeToggle .theme-label"),
+  navToggle: $("#navToggle"),
+  primaryNav: $("#primaryNav"),
+  dataStatus: $("#dataStatus"),
+  scoreMeta: document.querySelector(".score-meta"),
+  lastUpdated: $("#lastUpdated"),
+  scoreboardHeadline: $("#scoreboardHeadline"),
+  seriesScore: $("#seriesScore"),
+  mtlRecord: $("#mtlRecord"),
+  opponentRecord: $("#opponentRecord"),
+  mtlLogo: $("#mtlLogo"),
+  opponentLogo: $("#opponentLogo"),
+  awayCode: $("#awayCode"),
+  homeCode: $("#homeCode"),
+  awayScore: $("#awayScore"),
+  homeScore: $("#homeScore"),
+  gameState: $("#gameState"),
+  gameClock: $("#gameClock"),
+  liveScoreCard: $("#liveScoreCard"),
+  teamStatsGrid: $("#teamStatsGrid"),
+  leaderGrid: $("#leaderGrid"),
+  lineupGrid: $("#lineupGrid"),
+  lineupStatus: $("#lineupStatus"),
+  miniScore: $("#miniScore"),
+  miniAwayCode: $("#miniAwayCode"),
+  miniHomeCode: $("#miniHomeCode"),
+  miniAwayScore: $("#miniAwayScore"),
+  miniHomeScore: $("#miniHomeScore"),
+  miniState: $("#miniState"),
+  countdown: $("#puckCountdown"),
+  cdDays: $("#cdDays"),
+  cdHours: $("#cdHours"),
+  cdMinutes: $("#cdMinutes"),
+  cdSeconds: $("#cdSeconds")
+};
+
+const STORAGE_KEY_NOTES = "tableau-ch-notes";
+const STORAGE_KEY_THEME = "tableau-ch-theme";
+const POLL_INTERVAL_MS = 60_000;
+const MAX_NOTES = 50;
+
+let pollTimer = null;
+let inflightController = null;
+let countdownTimer = null;
+let lastStatus = null;
+
+// ---------------------- Data fetching ----------------------
 
 async function fetchLiveData() {
+  if (inflightController) {
+    inflightController.abort();
+  }
+
+  inflightController = new AbortController();
+  const { signal } = inflightController;
+
   const endpoints = [
-    "/.netlify/functions/nhl",
-    "https://api-web.nhle.com/v1/club-schedule-season/MTL/now"
+    { url: "/.netlify/functions/nhl", normalize: normalizeFunctionData },
+    { url: "https://api-web.nhle.com/v1/club-schedule-season/MTL/now", normalize: normalizeScheduleData }
   ];
 
   for (const endpoint of endpoints) {
     try {
-      const response = await fetch(endpoint, { cache: "no-store" });
+      const response = await fetch(endpoint.url, { cache: "no-store", signal });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
 
       const payload = await response.json();
-      return endpoint.includes("netlify") ? normalizeFunctionData(payload) : normalizeScheduleData(payload);
-    } catch {
+      return endpoint.normalize(payload);
+    } catch (error) {
+      if (error.name === "AbortError") {
+        return null;
+      }
       continue;
     }
   }
@@ -169,7 +212,7 @@ function normalizeFunctionData(payload) {
     ...fallbackData,
     ...payload,
     source: "live",
-    lastUpdated: payload.lastUpdated?.includes("T")
+    lastUpdated: payload.lastUpdated?.includes?.("T")
       ? `Mis à jour ${formatTimestamp(new Date(payload.lastUpdated))}`
       : payload.lastUpdated || fallbackData.lastUpdated
   };
@@ -187,7 +230,7 @@ function normalizeScheduleData(payload) {
     source: "live",
     lastUpdated: `Mis à jour ${formatTimestamp(new Date())}`,
     headline: nextGame ? statusText(nextGame) : fallbackData.headline,
-    gameStatus: nextGame ? gameStatus(nextGame) : fallbackData.gameStatus,
+    gameStatus: nextGame ? gameStatusFromGame(nextGame) : fallbackData.gameStatus,
     mtlLogo: teamLogo(nextGame, "MTL") || fallbackData.mtlLogo,
     opponentLogo: nextGame ? opponentLogoFor(nextGame, "MTL") || fallbackData.opponentLogo : fallbackData.opponentLogo,
     games: uniqueGames.length ? uniqueGames.map(toScheduleRow) : fallbackData.games
@@ -206,7 +249,8 @@ function toScheduleRow(game, index) {
     date: formatDate(game.gameDate || game.startTimeUTC),
     label: game.seriesGameNumber ? `Match ${game.seriesGameNumber}` : `Match ${index + 1}`,
     detail: gameDetail(game),
-    tag: isFinal(game) ? "Final" : index === 0 ? "À venir" : "Calendrier"
+    tag: isFinal(game) ? "Final" : index === 0 ? "À venir" : "Calendrier",
+    state: isLiveState(game) ? "live" : isFinal(game) ? "final" : "upcoming"
   };
 }
 
@@ -222,10 +266,10 @@ function gameDetail(game) {
   return `${away} @ ${home} · ${venue}${time ? ` · ${time}` : ""}${score}`;
 }
 
-function gameStatus(game) {
+function gameStatusFromGame(game) {
   const away = game.awayTeam || {};
   const home = game.homeTeam || {};
-  const isLive = game.gameState === "LIVE" || game.gameState === "CRIT";
+  const isLive = isLiveState(game);
   const isDone = isFinal(game);
   const clock = game.clock?.timeRemaining || "";
   const period = game.periodDescriptor?.number ? `P${game.periodDescriptor.number}` : "";
@@ -237,15 +281,13 @@ function gameStatus(game) {
     homeScore: Number.isInteger(home.score) ? home.score : 0,
     state: isLive ? "En direct" : isDone ? "Final" : "Avant-match",
     detail: isLive ? [period, clock].filter(Boolean).join(" · ") : isDone ? "Terminé" : formatTime(game.startTimeUTC),
-    isLive
+    isLive,
+    startTimeUTC: game.startTimeUTC || null
   };
 }
 
 function teamLogo(game, teamCode) {
-  if (!game) {
-    return "";
-  }
-
+  if (!game) return "";
   const team = game.awayTeam?.abbrev === teamCode ? game.awayTeam : game.homeTeam;
   return team?.logo || team?.darkLogo || "";
 }
@@ -256,32 +298,25 @@ function opponentLogoFor(game, teamCode) {
 }
 
 function statusText(game) {
-  if (game.gameState === "LIVE" || game.gameState === "CRIT") {
-    return "Match en direct";
-  }
-
-  if (isFinal(game)) {
-    return "Dernier match final";
-  }
-
+  if (isLiveState(game)) return "Match en direct";
+  if (isFinal(game)) return "Dernier match final";
   return game.seriesGameNumber ? `Match ${game.seriesGameNumber} à venir` : "Prochain match";
 }
 
-function formatDate(value) {
-  if (!value) {
-    return "À confirmer";
-  }
-
-  const date = String(value).includes("T") ? new Date(value) : new Date(`${value}T12:00:00`);
-
-  return new Intl.DateTimeFormat("fr-CA", {
-    day: "numeric",
-    month: "short"
-  }).format(date);
+function isLiveState(game) {
+  return game.gameState === "LIVE" || game.gameState === "CRIT";
 }
 
 function isFinal(game) {
   return game.gameState === "OFF" || game.gameState === "FINAL";
+}
+
+// ---------------------- Formatters ----------------------
+
+function formatDate(value) {
+  if (!value) return "À confirmer";
+  const date = String(value).includes("T") ? new Date(value) : new Date(`${value}T12:00:00`);
+  return new Intl.DateTimeFormat("fr-CA", { day: "numeric", month: "short" }).format(date);
 }
 
 function formatTime(value) {
@@ -303,8 +338,31 @@ function formatTimestamp(date) {
   }).format(date);
 }
 
+function formatNoteTime(date) {
+  return new Intl.DateTimeFormat("fr-CA", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  })[character]);
+}
+
+// ---------------------- Render ----------------------
+
 function renderAppData(data) {
-  scheduleList.innerHTML = data.games
+  if (!data) return;
+
+  els.scheduleList.innerHTML = data.games
     .map((game) => `
       <article class="game-row">
         <time>${escapeHtml(game.date)}</time>
@@ -312,37 +370,49 @@ function renderAppData(data) {
           <strong>${escapeHtml(game.label)}</strong>
           <small>${escapeHtml(game.detail)}</small>
         </div>
-        <span class="badge">${escapeHtml(game.tag)}</span>
+        <span class="badge${game.state === "live" ? " is-live" : ""}">${escapeHtml(game.tag)}</span>
       </article>
     `)
     .join("");
 
-  dataStatus.textContent = data.source === "live" ? "Données NHL en direct" : "Données intégrées";
-  lastUpdated.textContent = data.lastUpdated;
-  scoreboardHeadline.textContent = data.headline;
-  seriesScore.textContent = data.seriesScore;
-  mtlRecord.textContent = data.mtlRecord;
-  opponentRecord.textContent = data.opponentRecord;
-  mtlLogo.src = data.mtlLogo || fallbackData.mtlLogo;
-  opponentLogo.src = data.opponentLogo || fallbackData.opponentLogo;
-  renderGameStatus(data.gameStatus || fallbackData.gameStatus);
+  els.dataStatus.textContent = data.source === "live" ? "Données NHL en direct" : "Données intégrées";
+  els.lastUpdated.textContent = data.lastUpdated;
+  els.scoreboardHeadline.textContent = data.headline;
+  els.seriesScore.textContent = data.seriesScore;
+  els.mtlRecord.textContent = data.mtlRecord;
+  els.opponentRecord.textContent = data.opponentRecord;
+  els.mtlLogo.src = data.mtlLogo || fallbackData.mtlLogo;
+  els.opponentLogo.src = data.opponentLogo || fallbackData.opponentLogo;
+
+  const status = data.gameStatus || fallbackData.gameStatus;
+  lastStatus = status;
+  renderGameStatus(status);
   renderTeamStats(data.teamStats || fallbackData.teamStats);
   renderLeaders(data.leaders || fallbackData.leaders);
   renderLineups(data.lineups || fallbackData.lineups);
+  updateCountdown(status);
+  els.scoreMeta?.classList.toggle("is-live", Boolean(status.isLive));
 }
 
 function renderGameStatus(status) {
-  awayCode.textContent = status.awayCode;
-  homeCode.textContent = status.homeCode;
-  awayScore.textContent = status.awayScore;
-  homeScore.textContent = status.homeScore;
-  gameState.textContent = status.state;
-  gameClock.textContent = status.detail;
-  liveScoreCard.classList.toggle("is-live", Boolean(status.isLive));
+  els.awayCode.textContent = status.awayCode;
+  els.homeCode.textContent = status.homeCode;
+  els.awayScore.textContent = status.awayScore;
+  els.homeScore.textContent = status.homeScore;
+  els.gameState.textContent = status.state;
+  els.gameClock.textContent = status.detail;
+  els.liveScoreCard.classList.toggle("is-live", Boolean(status.isLive));
+
+  els.miniAwayCode.textContent = status.awayCode;
+  els.miniHomeCode.textContent = status.homeCode;
+  els.miniAwayScore.textContent = status.awayScore;
+  els.miniHomeScore.textContent = status.homeScore;
+  els.miniState.textContent = status.isLive ? `${status.state} · ${status.detail}` : status.detail || status.state;
+  els.miniScore.classList.toggle("is-live", Boolean(status.isLive));
 }
 
 function renderTeamStats(teams) {
-  teamStatsGrid.innerHTML = teams
+  els.teamStatsGrid.innerHTML = teams
     .map((team) => `
       <article class="team-stat-card">
         <div>
@@ -364,7 +434,7 @@ function renderTeamStats(teams) {
 }
 
 function renderLeaders(groups) {
-  leaderGrid.innerHTML = groups
+  els.leaderGrid.innerHTML = groups
     .map((group) => `
       <article class="leader-team">
         <h3>${escapeHtml(group.team)}</h3>
@@ -379,7 +449,7 @@ function renderLeaders(groups) {
 function playerCard(player) {
   return `
     <div class="player-card">
-      <img src="${escapeHtml(player.headshot || "https://assets.nhle.com/mugs/nhl/latest/default.png")}" alt="">
+      <img src="${escapeHtml(player.headshot || "https://assets.nhle.com/mugs/nhl/latest/default.png")}" alt="" loading="lazy" decoding="async">
       <div>
         <strong>${escapeHtml(player.name)}</strong>
         <small>${escapeHtml(player.meta)}</small>
@@ -391,8 +461,8 @@ function playerCard(player) {
 
 function renderLineups(lineups) {
   const statuses = [...new Set(lineups.map((lineup) => lineup.status))];
-  lineupStatus.textContent = statuses.length === 1 ? statuses[0] : "Mixte";
-  lineupGrid.innerHTML = lineups
+  els.lineupStatus.textContent = statuses.length === 1 ? statuses[0] : "Mixte";
+  els.lineupGrid.innerHTML = lineups
     .map((lineup) => `
       <article class="lineup-card">
         <div class="lineup-card-header">
@@ -401,11 +471,11 @@ function renderLineups(lineups) {
         </div>
         <div class="line-block">
           <h3>Attaquants</h3>
-          ${lineup.forwards.map((line) => lineRow(line)).join("")}
+          ${lineup.forwards.map(lineRow).join("")}
         </div>
         <div class="line-block">
           <h3>Défenseurs</h3>
-          ${lineup.defense.map((line) => lineRow(line)).join("")}
+          ${lineup.defense.map(lineRow).join("")}
         </div>
         <div class="goalie-row">
           <span>Gardiens</span>
@@ -425,89 +495,299 @@ function lineRow(line) {
 }
 
 function renderFactors() {
-  factorGrid.innerHTML = factors
+  els.factorGrid.innerHTML = factors
     .map((factor) => `
       <article class="factor">
-        <span>${factor.icon}</span>
-        <h3>${factor.title}</h3>
-        <p>${factor.text}</p>
+        <span aria-hidden="true">${escapeHtml(factor.icon)}</span>
+        <h3>${escapeHtml(factor.title)}</h3>
+        <p>${escapeHtml(factor.text)}</p>
       </article>
     `)
     .join("");
 }
 
+// ---------------------- Notes ----------------------
+
 function getNotes() {
   try {
-    return JSON.parse(localStorage.getItem(storageKey)) || [];
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY_NOTES));
+    if (!Array.isArray(raw)) return [];
+    return raw.map((entry) => {
+      if (typeof entry === "string") return { text: entry, ts: null };
+      if (entry && typeof entry.text === "string") return { text: entry.text, ts: entry.ts || null };
+      return null;
+    }).filter(Boolean);
   } catch {
     return [];
   }
 }
 
 function saveNotes(notes) {
-  localStorage.setItem(storageKey, JSON.stringify(notes));
+  localStorage.setItem(STORAGE_KEY_NOTES, JSON.stringify(notes));
 }
 
 function renderNotes() {
   const notes = getNotes();
-  notesList.innerHTML = notes.length
-    ? notes
-        .map((note, index) => `
-          <div class="note-item">
-            <span>${escapeHtml(note)}</span>
-            <button type="button" data-delete="${index}" aria-label="Supprimer cette note">×</button>
+
+  if (!notes.length) {
+    els.notesList.innerHTML = `<div class="note-empty">Aucune note pour l’instant.</div>`;
+  } else {
+    els.notesList.innerHTML = notes
+      .map((note, index) => `
+        <div class="note-item">
+          <div class="note-item-body">
+            <span>${escapeHtml(note.text)}</span>
+            ${note.ts ? `<time datetime="${escapeHtml(new Date(note.ts).toISOString())}">${escapeHtml(formatNoteTime(new Date(note.ts)))}</time>` : ""}
           </div>
-        `)
-        .join("")
-    : `<div class="note-item"><span>Aucune note pour l’instant.</span></div>`;
+          <button type="button" data-delete="${index}" aria-label="Supprimer cette note">×</button>
+        </div>
+      `)
+      .join("");
+  }
+
+  els.notesMeta.textContent = notes.length === 0
+    ? "Aucune note"
+    : notes.length === 1
+      ? "1 note"
+      : `${notes.length} notes`;
+
+  for (const button of document.querySelectorAll("[data-disabled-when-empty]")) {
+    button.disabled = notes.length === 0;
+  }
 }
 
-function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, (character) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;"
-  })[character]);
+function addNote(text) {
+  const trimmed = text.trim();
+  if (!trimmed) return;
+  const notes = [{ text: trimmed, ts: Date.now() }, ...getNotes()].slice(0, MAX_NOTES);
+  saveNotes(notes);
+  renderNotes();
 }
 
-noteForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  const value = noteInput.value.trim();
+function deleteNote(index) {
+  const notes = getNotes().filter((_, i) => i !== index);
+  saveNotes(notes);
+  renderNotes();
+}
 
-  if (!value) {
+async function copyAllNotes() {
+  const notes = getNotes();
+  if (!notes.length) return;
+  const lines = notes.map((note) => {
+    const ts = note.ts ? `[${formatNoteTime(new Date(note.ts))}] ` : "";
+    return `${ts}${note.text}`;
+  });
+  const text = lines.join("\n");
+  try {
+    await navigator.clipboard.writeText(text);
+    flashButton(els.copyNotes, "Copié ✓");
+  } catch {
+    flashButton(els.copyNotes, "Échec");
+  }
+}
+
+function flashButton(btn, label) {
+  if (!btn) return;
+  const original = btn.textContent;
+  btn.textContent = label;
+  setTimeout(() => { btn.textContent = original; }, 1400);
+}
+
+function clearAllNotes() {
+  if (!getNotes().length) return;
+  if (!confirm("Effacer toutes les notes ? Cette action est définitive.")) return;
+  saveNotes([]);
+  renderNotes();
+}
+
+// ---------------------- Theme ----------------------
+
+function applyTheme(mode) {
+  const root = document.documentElement;
+  root.classList.remove("ice-mode", "night-mode");
+  if (mode === "light") root.classList.add("ice-mode");
+  if (mode === "dark") root.classList.add("night-mode");
+  const isLight = mode === "light"
+    || (mode === "auto" && window.matchMedia("(prefers-color-scheme: light)").matches);
+  els.themeToggle.setAttribute("aria-pressed", String(isLight));
+  if (els.themeLabel) {
+    els.themeLabel.textContent = isLight ? "Nuit" : "Glace";
+  }
+}
+
+function getStoredTheme() {
+  try {
+    return localStorage.getItem(STORAGE_KEY_THEME) || "auto";
+  } catch {
+    return "auto";
+  }
+}
+
+function setTheme(mode) {
+  try { localStorage.setItem(STORAGE_KEY_THEME, mode); } catch {}
+  applyTheme(mode);
+}
+
+// ---------------------- Countdown ----------------------
+
+function updateCountdown(status) {
+  if (countdownTimer) {
+    clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+
+  const target = status?.startTimeUTC ? new Date(status.startTimeUTC) : null;
+  if (!target || Number.isNaN(target.getTime()) || status?.isLive || status?.state === "Final") {
+    els.countdown.hidden = true;
     return;
   }
 
-  const notes = [value, ...getNotes()].slice(0, 8);
-  saveNotes(notes);
-  noteInput.value = "";
-  renderNotes();
-});
+  const tick = () => {
+    const remaining = target.getTime() - Date.now();
+    if (remaining <= 0) {
+      els.countdown.hidden = true;
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+      return;
+    }
+    const seconds = Math.floor(remaining / 1000);
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    els.cdDays.textContent = String(days).padStart(2, "0");
+    els.cdHours.textContent = String(hours).padStart(2, "0");
+    els.cdMinutes.textContent = String(minutes).padStart(2, "0");
+    els.cdSeconds.textContent = String(secs).padStart(2, "0");
+    els.countdown.hidden = false;
+  };
 
-notesList.addEventListener("click", (event) => {
-  const deleteIndex = event.target.dataset.delete;
+  tick();
+  countdownTimer = setInterval(tick, 1000);
+}
 
-  if (deleteIndex === undefined) {
-    return;
+// ---------------------- Polling lifecycle ----------------------
+
+function startPolling() {
+  stopPolling();
+  fetchLiveData().then((data) => { if (data) renderAppData(data); });
+  pollTimer = setInterval(() => {
+    fetchLiveData().then((data) => { if (data) renderAppData(data); });
+  }, POLL_INTERVAL_MS);
+}
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
   }
+}
 
-  const notes = getNotes().filter((_, index) => index !== Number(deleteIndex));
-  saveNotes(notes);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    stopPolling();
+  } else {
+    startPolling();
+  }
+});
+
+// ---------------------- Mobile nav + scrollspy ----------------------
+
+function setupNav() {
+  els.navToggle.addEventListener("click", () => {
+    const isOpen = els.primaryNav.classList.toggle("is-open");
+    els.navToggle.setAttribute("aria-expanded", String(isOpen));
+    els.navToggle.setAttribute("aria-label", isOpen ? "Fermer le menu" : "Ouvrir le menu");
+  });
+
+  els.primaryNav.addEventListener("click", (event) => {
+    if (event.target.closest("a")) {
+      els.primaryNav.classList.remove("is-open");
+      els.navToggle.setAttribute("aria-expanded", "false");
+    }
+  });
+
+  const sections = ["calendrier", "series", "stats", "notes"]
+    .map((id) => document.getElementById(id))
+    .filter(Boolean);
+  const links = new Map(
+    Array.from(document.querySelectorAll("[data-spy]"))
+      .map((a) => [a.dataset.spy, a])
+  );
+
+  if (!("IntersectionObserver" in window) || !sections.length) return;
+
+  const observer = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (entry.isIntersecting) {
+        for (const link of links.values()) link.classList.remove("is-active");
+        const link = links.get(entry.target.id);
+        if (link) link.classList.add("is-active");
+      }
+    }
+  }, { rootMargin: "-45% 0px -45% 0px", threshold: 0 });
+
+  sections.forEach((section) => observer.observe(section));
+}
+
+// ---------------------- Sticky mini-score ----------------------
+
+function setupMiniScore() {
+  const target = document.querySelector(".scoreboard");
+  if (!target || !("IntersectionObserver" in window)) return;
+  const observer = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      els.miniScore.classList.toggle("is-visible", !entry.isIntersecting);
+      els.miniScore.setAttribute("aria-hidden", String(entry.isIntersecting));
+    }
+  }, { threshold: 0 });
+  observer.observe(target);
+}
+
+// ---------------------- Boot ----------------------
+
+function setupForms() {
+  els.noteForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    addNote(els.noteInput.value);
+    els.noteInput.value = "";
+  });
+
+  els.notesList.addEventListener("click", (event) => {
+    const target = event.target.closest("[data-delete]");
+    if (!target) return;
+    deleteNote(Number(target.dataset.delete));
+  });
+
+  els.copyNotes.addEventListener("click", copyAllNotes);
+  els.clearNotes.addEventListener("click", clearAllNotes);
+}
+
+function setupTheme() {
+  applyTheme(getStoredTheme());
+  els.themeToggle.addEventListener("click", () => {
+    const current = getStoredTheme();
+    const isLight = document.documentElement.classList.contains("ice-mode")
+      || (current === "auto" && window.matchMedia("(prefers-color-scheme: light)").matches);
+    setTheme(isLight ? "dark" : "light");
+  });
+
+  if (window.matchMedia) {
+    window.matchMedia("(prefers-color-scheme: light)").addEventListener?.("change", () => {
+      if (getStoredTheme() === "auto") applyTheme("auto");
+    });
+  }
+}
+
+function init() {
+  setupTheme();
+  setupForms();
+  setupNav();
+  setupMiniScore();
+  renderAppData(fallbackData);
+  renderFactors();
   renderNotes();
-});
+  startPolling();
+}
 
-themeToggle.addEventListener("click", () => {
-  const enabled = document.documentElement.classList.toggle("ice-mode");
-  themeToggle.setAttribute("aria-pressed", String(enabled));
-  themeToggle.lastChild.textContent = enabled ? " Nuit" : " Glace";
-});
-
-renderAppData(fallbackData);
-renderFactors();
-renderNotes();
-fetchLiveData().then(renderAppData);
-setInterval(() => {
-  fetchLiveData().then(renderAppData);
-}, 60000);
+init();
