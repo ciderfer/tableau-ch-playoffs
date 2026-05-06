@@ -150,16 +150,13 @@ function leaderGroup(team, stats) {
 
 function projectedLineup(team, roster, stats) {
   const ranked = rankRoster(roster, stats);
-  const centers = ranked.forwards.filter((player) => player.positionCode === "C");
-  const left = ranked.forwards.filter((player) => player.positionCode === "L");
-  const right = ranked.forwards.filter((player) => player.positionCode === "R");
-  const extraForwards = ranked.forwards.filter((player) => !["C", "L", "R"].includes(player.positionCode));
+  const forwardsPool = ranked.forwards.slice(0, 14);
 
   const forwards = [0, 1, 2, 3].map((index) => [
     `L${index + 1}`,
-    compactName(pickPlayer(left, index, extraForwards)),
-    compactName(pickPlayer(centers, index, extraForwards)),
-    compactName(pickPlayer(right, index, extraForwards))
+    compactName(takeForward(forwardsPool, "L")),
+    compactName(takeForward(forwardsPool, "C")),
+    compactName(takeForward(forwardsPool, "R"))
   ]);
 
   const defense = [0, 1, 2].map((index) => [
@@ -198,8 +195,11 @@ function sortRoster(players, scoreById) {
   return [...players].sort((a, b) => (scoreById.get(b.id) || 0) - (scoreById.get(a.id) || 0) || (a.sweaterNumber || 99) - (b.sweaterNumber || 99));
 }
 
-function pickPlayer(primary, index, fallback) {
-  return primary[index] || fallback.shift() || primary[index % primary.length];
+function takeForward(pool, position) {
+  const index = pool.findIndex((player) => player.positionCode === position);
+  const playerIndex = index >= 0 ? index : 0;
+  const [player] = pool.splice(playerIndex, 1);
+  return player;
 }
 
 function playerName(player) {
@@ -220,7 +220,7 @@ function signed(value) {
 }
 
 function pct(value) {
-  return Number.isFinite(value) ? value.toFixed(3).replace(/^0/, ".") : "—";
+  return Number.isFinite(value) ? value.toFixed(3).replace(/^0\./, ".") : "—";
 }
 
 function opponentFor(game, teamCode) {
