@@ -247,44 +247,11 @@ h2 {
   color: #1f3b50;
 }
 
-.hero-signals {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 148px));
-  gap: 10px;
-  margin: 24px 0;
-}
-
-.hero-signals span {
-  min-height: 72px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--muted);
-  font-size: 0.74rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  backdrop-filter: blur(14px);
-}
-
-.hero-signals strong {
-  display: block;
-  margin-bottom: 8px;
-  color: var(--text);
-  font-size: 1rem;
-  line-height: 1;
-  text-transform: none;
-}
-
-:root.ice-mode .hero-signals span {
-  background: rgba(255, 255, 255, 0.66);
-}
-
 .data-strip {
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  margin: 2px 0 22px;
+  margin: 4px 0 22px;
   border: 1px solid var(--line);
   border-radius: 999px;
   padding: 8px 12px;
@@ -363,8 +330,7 @@ h2 {
 
 .scoreboard,
 .panel,
-.notes-section,
-.ticker article {
+.notes-section {
   border: 1px solid var(--line);
   background: var(--surface);
   box-shadow: var(--shadow);
@@ -376,8 +342,7 @@ h2 {
   overflow: hidden;
 }
 
-.scoreboard-header,
-.next-puck {
+.scoreboard-header {
   display: flex;
   justify-content: space-between;
   gap: 14px;
@@ -436,7 +401,6 @@ h2 {
 }
 
 .scoreboard-header span,
-.next-puck span,
 .team small,
 .versus small {
   color: var(--muted);
@@ -550,33 +514,7 @@ h2 {
 main {
   display: grid;
   gap: 28px;
-  padding: 0 clamp(18px, 4vw, 56px) 54px;
-}
-
-.ticker {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  margin-top: -34px;
-}
-
-.ticker article {
-  min-height: 96px;
-  border-radius: 8px;
-  padding: 18px;
-}
-
-.ticker span {
-  display: block;
-  margin-bottom: 10px;
-  color: var(--muted);
-  font-size: 0.76rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.ticker strong {
-  line-height: 1.25;
+  padding: 20px clamp(18px, 4vw, 56px) 54px;
 }
 
 .section-grid {
@@ -707,67 +645,6 @@ main {
   margin-bottom: 0;
   color: var(--muted);
   line-height: 1.45;
-}
-
-.momentum-meter {
-  display: grid;
-  gap: 18px;
-}
-
-.meter-track {
-  position: relative;
-  height: 16px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.13);
-}
-
-.meter-track span {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: var(--value);
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--blue), var(--red), var(--gold));
-}
-
-.meter-copy {
-  display: flex;
-  align-items: end;
-  gap: 14px;
-}
-
-.meter-copy strong {
-  font-size: 4rem;
-  line-height: 0.8;
-}
-
-.meter-copy span {
-  max-width: 120px;
-  color: var(--muted);
-  font-weight: 800;
-}
-
-.signal-list {
-  display: grid;
-  gap: 12px;
-  padding: 22px 0 0;
-  margin: 0;
-  list-style: none;
-}
-
-.signal-list li {
-  display: flex;
-  gap: 10px;
-  color: var(--muted);
-}
-
-.signal-list span {
-  width: 9px;
-  height: 9px;
-  margin-top: 7px;
-  border-radius: 50%;
-  background: var(--red);
-  box-shadow: 0 0 0 5px rgba(215, 25, 63, 0.12);
 }
 
 .bracket {
@@ -1132,7 +1009,6 @@ footer a {
     max-width: 560px;
   }
 
-  .ticker,
   .dashboard,
   .factor-grid,
   .stats-layout,
@@ -1172,7 +1048,6 @@ footer a {
   }
 
   .scoreboard-header,
-  .next-puck,
   .game-row,
   .panel-title {
     grid-template-columns: 1fr;

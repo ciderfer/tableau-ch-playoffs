@@ -3,7 +3,6 @@ const fallbackData = {
   lastUpdated: "Données vérifiées le 6 mai 2026",
   headline: "Match 1 ce soir",
   seriesScore: "0-0",
-  nextPuck: "19 h HE · KeyBank Center",
   gameStatus: {
     awayCode: "MTL",
     homeCode: "BUF",
@@ -119,15 +118,10 @@ const dataStatus = document.querySelector("#dataStatus");
 const lastUpdated = document.querySelector("#lastUpdated");
 const scoreboardHeadline = document.querySelector("#scoreboardHeadline");
 const seriesScore = document.querySelector("#seriesScore");
-const seriesPill = document.querySelector("#seriesPill");
-const nextPuck = document.querySelector("#nextPuck");
 const mtlRecord = document.querySelector("#mtlRecord");
 const opponentRecord = document.querySelector("#opponentRecord");
 const mtlLogo = document.querySelector("#mtlLogo");
 const opponentLogo = document.querySelector("#opponentLogo");
-const heroSeries = document.querySelector("#heroSeries");
-const heroStatus = document.querySelector("#heroStatus");
-const heroLineup = document.querySelector("#heroLineup");
 const awayCode = document.querySelector("#awayCode");
 const homeCode = document.querySelector("#homeCode");
 const awayScore = document.querySelector("#awayScore");
@@ -193,7 +187,6 @@ function normalizeScheduleData(payload) {
     source: "live",
     lastUpdated: `Mis à jour ${formatTimestamp(new Date())}`,
     headline: nextGame ? statusText(nextGame) : fallbackData.headline,
-    nextPuck: nextGame ? gameDetail(nextGame) : fallbackData.nextPuck,
     gameStatus: nextGame ? gameStatus(nextGame) : fallbackData.gameStatus,
     mtlLogo: teamLogo(nextGame, "MTL") || fallbackData.mtlLogo,
     opponentLogo: nextGame ? opponentLogoFor(nextGame, "MTL") || fallbackData.opponentLogo : fallbackData.opponentLogo,
@@ -328,9 +321,6 @@ function renderAppData(data) {
   lastUpdated.textContent = data.lastUpdated;
   scoreboardHeadline.textContent = data.headline;
   seriesScore.textContent = data.seriesScore;
-  seriesPill.textContent = data.seriesScore;
-  heroSeries.textContent = data.seriesScore;
-  nextPuck.textContent = data.nextPuck;
   mtlRecord.textContent = data.mtlRecord;
   opponentRecord.textContent = data.opponentRecord;
   mtlLogo.src = data.mtlLogo || fallbackData.mtlLogo;
@@ -348,7 +338,6 @@ function renderGameStatus(status) {
   homeScore.textContent = status.homeScore;
   gameState.textContent = status.state;
   gameClock.textContent = status.detail;
-  heroStatus.textContent = status.state;
   liveScoreCard.classList.toggle("is-live", Boolean(status.isLive));
 }
 
@@ -403,7 +392,6 @@ function playerCard(player) {
 function renderLineups(lineups) {
   const statuses = [...new Set(lineups.map((lineup) => lineup.status))];
   lineupStatus.textContent = statuses.length === 1 ? statuses[0] : "Mixte";
-  heroLineup.textContent = lineupStatus.textContent.replace(" NHL.com", "");
   lineupGrid.innerHTML = lineups
     .map((lineup) => `
       <article class="lineup-card">
