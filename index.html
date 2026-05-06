@@ -27,6 +27,7 @@
         <div class="nav-actions">
           <a href="#calendrier">Calendrier</a>
           <a href="#series">Portrait</a>
+          <a href="#stats">Stats</a>
           <a href="#notes">Notes</a>
         </div>
       </nav>
@@ -177,6 +178,49 @@
               <small>éliminé</small>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section id="stats" class="stats-section">
+        <div class="panel-title">
+          <div>
+            <p class="eyebrow">Stats & Alignements</p>
+            <h2>Le portrait hockey, pas juste le score.</h2>
+          </div>
+          <span class="status-pill">NHL live</span>
+        </div>
+
+        <div class="stats-layout">
+          <div class="panel stats-panel">
+            <div class="panel-title compact-title">
+              <div>
+                <p class="eyebrow">Équipes</p>
+                <h2>Comparatif</h2>
+              </div>
+            </div>
+            <div class="team-stats-grid" id="teamStatsGrid"></div>
+          </div>
+
+          <div class="panel leaders-panel">
+            <div class="panel-title compact-title">
+              <div>
+                <p class="eyebrow">Joueurs</p>
+                <h2>Leaders des séries</h2>
+              </div>
+            </div>
+            <div class="leader-grid" id="leaderGrid"></div>
+          </div>
+        </div>
+
+        <div class="panel lineup-panel">
+          <div class="panel-title">
+            <div>
+              <p class="eyebrow">Trios</p>
+              <h2>Alignements projetés</h2>
+            </div>
+            <span class="status-pill" id="lineupStatus">Projection</span>
+          </div>
+          <div class="lineup-grid" id="lineupGrid"></div>
         </div>
       </section>
 

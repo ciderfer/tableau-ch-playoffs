@@ -1,5 +1,6 @@
 const NHL_SCHEDULE_URL = "https://api-web.nhle.com/v1/club-schedule-season/MTL/now";
 const NHL_STANDINGS_URL = "https://api-web.nhle.com/v1/standings/now";
+const NHL_BASE_URL = "https://api-web.nhle.com/v1";
 
 exports.handler = async () => {
   try {
@@ -8,7 +9,7 @@ exports.handler = async () => {
       fetchJson(NHL_STANDINGS_URL)
     ]);
 
-    const payload = buildPayload(schedule, standings);
+    const payload = await buildPayload(schedule, standings);
 
     return {
       statusCode: 200,
@@ -44,7 +45,7 @@ async function fetchJson(url) {
   return response.json();
 }
 
-function buildPayload(schedule, standings) {
+async function buildPayload(schedule, standings) {
   const rawGames = Array.isArray(schedule?.games) ? schedule.games : [];
   const playoffGames = rawGames.filter((game) => game.gameType === 3 || game.gameType === 4);
   const games = (playoffGames.length ? playoffGames : rawGames.slice(-7)).slice(-7);
@@ -53,7 +54,7 @@ function buildPayload(schedule, standings) {
   const opponentCode = nextGame ? opponentFor(nextGame, "MTL") : "BUF";
   const opponent = findStanding(standings, opponentCode);
 
-  return {
+  return enrichPayload({
     source: "live",
     lastUpdated: new Date().toISOString(),
     headline: nextGame ? statusText(nextGame) : "Calendrier NHL",
@@ -64,6 +65,31 @@ function buildPayload(schedule, standings) {
     mtlLogo: teamLogo(nextGame, "MTL") || "https://assets.nhle.com/logos/nhl/svg/MTL_light.svg",
     opponentLogo: nextGame ? opponentLogoFor(nextGame, "MTL") : "https://assets.nhle.com/logos/nhl/svg/BUF_light.svg",
     games: games.map(toScheduleRow)
+  }, mtl, opponent, opponentCode);
+}
+
+async function enrichPayload(payload, mtlStanding, opponentStanding, opponentCode) {
+  const [mtlStats, opponentStats, mtlRoster, opponentRoster] = await Promise.all([
+    fetchJson(`${NHL_BASE_URL}/club-stats/MTL/now`),
+    fetchJson(`${NHL_BASE_URL}/club-stats/${opponentCode}/now`),
+    fetchJson(`${NHL_BASE_URL}/roster/MTL/current`),
+    fetchJson(`${NHL_BASE_URL}/roster/${opponentCode}/current`)
+  ]);
+
+  return {
+    ...payload,
+    teamStats: [
+      teamStatsCard("MTL", mtlStanding),
+      teamStatsCard(opponentCode, opponentStanding)
+    ],
+    leaders: [
+      leaderGroup("MTL", mtlStats),
+      leaderGroup(opponentCode, opponentStats)
+    ],
+    lineups: [
+      projectedLineup("MTL", mtlRoster, mtlStats),
+      projectedLineup(opponentCode, opponentRoster, opponentStats)
+    ]
   };
 }
 
@@ -78,6 +104,123 @@ function recordText(row) {
   }
 
   return `${row.wins}-${row.losses}-${row.otLosses}`;
+}
+
+function teamStatsCard(code, row) {
+  const games = row?.gamesPlayed || 82;
+  const goalsFor = row?.goalFor || 0;
+  const goalsAgainst = row?.goalAgainst || 0;
+
+  return {
+    code,
+    name: row?.teamCommonName?.default || code,
+    record: recordText(row),
+    metrics: [
+      { label: "Points", value: String(row?.points ?? "—") },
+      { label: "Buts / match", value: decimal(goalsFor / games) },
+      { label: "Alloués / match", value: decimal(goalsAgainst / games) },
+      { label: "Diff.", value: signed(row?.goalDifferential ?? 0) }
+    ]
+  };
+}
+
+function leaderGroup(team, stats) {
+  const skaters = [...(stats?.skaters || [])]
+    .sort((a, b) => b.points - a.points || b.goals - a.goals || b.shots - a.shots)
+    .slice(0, 4)
+    .map((player) => ({
+      name: playerName(player),
+      meta: `${player.positionCode} · ${player.goals}B ${player.assists}A`,
+      stat: `${player.points} pts`,
+      headshot: player.headshot
+    }));
+
+  const goalies = [...(stats?.goalies || [])]
+    .sort((a, b) => b.gamesStarted - a.gamesStarted || b.wins - a.wins)
+    .slice(0, 1)
+    .map((player) => ({
+      name: playerName(player),
+      meta: `${player.wins}-${player.losses}${player.overtimeLosses ? `-${player.overtimeLosses}` : ""}`,
+      stat: `${pct(player.savePercentage)} SV%`,
+      headshot: player.headshot
+    }));
+
+  return { team, skaters, goalies };
+}
+
+function projectedLineup(team, roster, stats) {
+  const ranked = rankRoster(roster, stats);
+  const centers = ranked.forwards.filter((player) => player.positionCode === "C");
+  const left = ranked.forwards.filter((player) => player.positionCode === "L");
+  const right = ranked.forwards.filter((player) => player.positionCode === "R");
+  const extraForwards = ranked.forwards.filter((player) => !["C", "L", "R"].includes(player.positionCode));
+
+  const forwards = [0, 1, 2, 3].map((index) => [
+    `L${index + 1}`,
+    compactName(pickPlayer(left, index, extraForwards)),
+    compactName(pickPlayer(centers, index, extraForwards)),
+    compactName(pickPlayer(right, index, extraForwards))
+  ]);
+
+  const defense = [0, 1, 2].map((index) => [
+    `D${index + 1}`,
+    compactName(ranked.defensemen[index * 2]),
+    compactName(ranked.defensemen[index * 2 + 1])
+  ]);
+
+  return {
+    team,
+    status: "Projection",
+    forwards,
+    defense,
+    goalies: ranked.goalies.slice(0, 2).map(compactName)
+  };
+}
+
+function rankRoster(roster, stats) {
+  const scoreById = new Map((stats?.skaters || []).map((player) => [
+    player.playerId,
+    player.points * 100 + player.goals * 10 + player.shots
+  ]));
+  const goalieScoreById = new Map((stats?.goalies || []).map((player) => [
+    player.playerId,
+    player.gamesStarted * 100 + player.wins * 20 + Math.round((player.savePercentage || 0) * 100)
+  ]));
+
+  return {
+    forwards: sortRoster(roster?.forwards || [], scoreById),
+    defensemen: sortRoster(roster?.defensemen || [], scoreById),
+    goalies: sortRoster(roster?.goalies || [], goalieScoreById)
+  };
+}
+
+function sortRoster(players, scoreById) {
+  return [...players].sort((a, b) => (scoreById.get(b.id) || 0) - (scoreById.get(a.id) || 0) || (a.sweaterNumber || 99) - (b.sweaterNumber || 99));
+}
+
+function pickPlayer(primary, index, fallback) {
+  return primary[index] || fallback.shift() || primary[index % primary.length];
+}
+
+function playerName(player) {
+  return `${player?.firstName?.default || ""} ${player?.lastName?.default || ""}`.trim();
+}
+
+function compactName(player) {
+  const name = playerName(player);
+  return name || "À confirmer";
+}
+
+function decimal(value) {
+  return Number.isFinite(value) ? value.toFixed(2) : "—";
+}
+
+function signed(value) {
+  return value > 0 ? `+${value}` : String(value);
+}
+
+function pct(value) {
+  return Number.isFinite(value) ? value.toFixed(3).replace(/^0/, ".") : "—";
 }
 
 function opponentFor(game, teamCode) {

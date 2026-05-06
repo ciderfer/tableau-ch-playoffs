@@ -8,6 +8,64 @@ const fallbackData = {
   opponentRecord: "50-23-9",
   mtlLogo: "https://assets.nhle.com/logos/nhl/svg/MTL_light.svg",
   opponentLogo: "https://assets.nhle.com/logos/nhl/svg/BUF_light.svg",
+  teamStats: [
+    {
+      code: "MTL",
+      name: "Canadiens",
+      record: "48-24-10",
+      metrics: [
+        { label: "Points", value: "106" },
+        { label: "Buts / match", value: "3.45" },
+        { label: "Alloués / match", value: "3.12" },
+        { label: "Diff.", value: "+27" }
+      ]
+    },
+    {
+      code: "BUF",
+      name: "Sabres",
+      record: "50-23-9",
+      metrics: [
+        { label: "Points", value: "109" },
+        { label: "Buts / match", value: "3.51" },
+        { label: "Alloués / match", value: "2.94" },
+        { label: "Diff.", value: "+47" }
+      ]
+    }
+  ],
+  leaders: [
+    {
+      team: "MTL",
+      skaters: [
+        { name: "Nick Suzuki", meta: "C", stat: "À suivre", headshot: "" },
+        { name: "Cole Caufield", meta: "R", stat: "Tirs", headshot: "" }
+      ],
+      goalies: [{ name: "Jakub Dobes", meta: "G", stat: ".923", headshot: "" }]
+    },
+    {
+      team: "BUF",
+      skaters: [
+        { name: "Tage Thompson", meta: "C", stat: "Menace", headshot: "" },
+        { name: "Rasmus Dahlin", meta: "D", stat: "Relance", headshot: "" }
+      ],
+      goalies: [{ name: "Alex Lyon", meta: "G", stat: ".955", headshot: "" }]
+    }
+  ],
+  lineups: [
+    {
+      team: "MTL",
+      status: "Projection",
+      forwards: [["L1", "Ailier G", "Centre", "Ailier D"], ["L2", "Ailier G", "Centre", "Ailier D"]],
+      defense: [["D1", "Défenseur", "Défenseur"], ["D2", "Défenseur", "Défenseur"]],
+      goalies: ["Jakub Dobes"]
+    },
+    {
+      team: "BUF",
+      status: "Projection",
+      forwards: [["L1", "Ailier G", "Centre", "Ailier D"], ["L2", "Ailier G", "Centre", "Ailier D"]],
+      defense: [["D1", "Défenseur", "Défenseur"], ["D2", "Défenseur", "Défenseur"]],
+      goalies: ["Alex Lyon"]
+    }
+  ],
   games: [
     { date: "6 mai", label: "Match 1", detail: "MTL @ BUF · KeyBank Center · 19 h HE", tag: "Ce soir" },
     { date: "8 mai", label: "Match 2", detail: "MTL @ BUF · KeyBank Center", tag: "Route" },
@@ -58,6 +116,10 @@ const mtlRecord = document.querySelector("#mtlRecord");
 const opponentRecord = document.querySelector("#opponentRecord");
 const mtlLogo = document.querySelector("#mtlLogo");
 const opponentLogo = document.querySelector("#opponentLogo");
+const teamStatsGrid = document.querySelector("#teamStatsGrid");
+const leaderGrid = document.querySelector("#leaderGrid");
+const lineupGrid = document.querySelector("#lineupGrid");
+const lineupStatus = document.querySelector("#lineupStatus");
 
 const storageKey = "tableau-ch-notes";
 
@@ -233,6 +295,91 @@ function renderAppData(data) {
   opponentRecord.textContent = data.opponentRecord;
   mtlLogo.src = data.mtlLogo || fallbackData.mtlLogo;
   opponentLogo.src = data.opponentLogo || fallbackData.opponentLogo;
+  renderTeamStats(data.teamStats || fallbackData.teamStats);
+  renderLeaders(data.leaders || fallbackData.leaders);
+  renderLineups(data.lineups || fallbackData.lineups);
+}
+
+function renderTeamStats(teams) {
+  teamStatsGrid.innerHTML = teams
+    .map((team) => `
+      <article class="team-stat-card">
+        <div>
+          <span>${escapeHtml(team.code)}</span>
+          <strong>${escapeHtml(team.name)}</strong>
+          <small>${escapeHtml(team.record)}</small>
+        </div>
+        <div class="metric-grid">
+          ${team.metrics.map((metric) => `
+            <div>
+              <strong>${escapeHtml(metric.value)}</strong>
+              <span>${escapeHtml(metric.label)}</span>
+            </div>
+          `).join("")}
+        </div>
+      </article>
+    `)
+    .join("");
+}
+
+function renderLeaders(groups) {
+  leaderGrid.innerHTML = groups
+    .map((group) => `
+      <article class="leader-team">
+        <h3>${escapeHtml(group.team)}</h3>
+        <div class="leader-list">
+          ${[...group.skaters, ...group.goalies].map(playerCard).join("")}
+        </div>
+      </article>
+    `)
+    .join("");
+}
+
+function playerCard(player) {
+  return `
+    <div class="player-card">
+      <img src="${escapeHtml(player.headshot || "https://assets.nhle.com/mugs/nhl/latest/default.png")}" alt="">
+      <div>
+        <strong>${escapeHtml(player.name)}</strong>
+        <small>${escapeHtml(player.meta)}</small>
+      </div>
+      <span>${escapeHtml(player.stat)}</span>
+    </div>
+  `;
+}
+
+function renderLineups(lineups) {
+  lineupStatus.textContent = lineups.every((lineup) => lineup.status === "Confirmé") ? "Confirmé" : "Projection";
+  lineupGrid.innerHTML = lineups
+    .map((lineup) => `
+      <article class="lineup-card">
+        <div class="lineup-card-header">
+          <strong>${escapeHtml(lineup.team)}</strong>
+          <span>${escapeHtml(lineup.status)}</span>
+        </div>
+        <div class="line-block">
+          <h3>Attaquants</h3>
+          ${lineup.forwards.map((line) => lineRow(line)).join("")}
+        </div>
+        <div class="line-block">
+          <h3>Défenseurs</h3>
+          ${lineup.defense.map((line) => lineRow(line)).join("")}
+        </div>
+        <div class="goalie-row">
+          <span>Gardiens</span>
+          <strong>${escapeHtml(lineup.goalies.join(" · "))}</strong>
+        </div>
+      </article>
+    `)
+    .join("");
+}
+
+function lineRow(line) {
+  return `
+    <div class="line-row">
+      ${line.map((slot, index) => index === 0 ? `<span>${escapeHtml(slot)}</span>` : `<strong>${escapeHtml(slot)}</strong>`).join("")}
+    </div>
+  `;
 }
 
 function renderFactors() {
