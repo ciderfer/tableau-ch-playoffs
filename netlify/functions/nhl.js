@@ -61,6 +61,7 @@ async function buildPayload(schedule, standings) {
     headline: nextGame ? statusText(nextGame) : "Calendrier NHL",
     seriesScore: seriesScore(games, "MTL", opponentCode),
     nextPuck: nextGame ? gameDetail(nextGame) : "À confirmer",
+    gameStatus: nextGame ? gameStatus(nextGame) : null,
     mtlRecord: recordText(mtl),
     opponentRecord: recordText(opponent),
     mtlLogo: teamLogo(nextGame, "MTL") || "https://assets.nhle.com/logos/nhl/svg/MTL_light.svg",
@@ -366,6 +367,25 @@ function gameDetail(game) {
     : "";
 
   return `${away} @ ${home} · ${venue}${time ? ` · ${time}` : ""}${score}`;
+}
+
+function gameStatus(game) {
+  const away = game.awayTeam || {};
+  const home = game.homeTeam || {};
+  const isLive = game.gameState === "LIVE" || game.gameState === "CRIT";
+  const isDone = isFinal(game);
+  const clock = game.clock?.timeRemaining || "";
+  const period = game.periodDescriptor?.number ? `P${game.periodDescriptor.number}` : "";
+
+  return {
+    awayCode: away.abbrev || "VIS",
+    homeCode: home.abbrev || "DOM",
+    awayScore: Number.isInteger(away.score) ? away.score : 0,
+    homeScore: Number.isInteger(home.score) ? home.score : 0,
+    state: isLive ? "En direct" : isDone ? "Final" : "Avant-match",
+    detail: isLive ? [period, clock].filter(Boolean).join(" · ") : isDone ? "Terminé" : shortTime(game.startTimeUTC),
+    isLive
+  };
 }
 
 function teamLogo(game, teamCode) {

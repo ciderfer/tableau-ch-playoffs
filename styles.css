@@ -181,9 +181,9 @@ footer {
 
 .hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 430px);
+  grid-template-columns: minmax(0, 0.95fr) minmax(340px, 460px);
   align-items: end;
-  gap: clamp(28px, 6vw, 76px);
+  gap: clamp(30px, 6vw, 84px);
   min-height: calc(92vh - 88px);
   padding-top: 54px;
 }
@@ -208,10 +208,10 @@ p {
 }
 
 h1 {
-  max-width: 780px;
+  max-width: 720px;
   margin-bottom: 20px;
-  font-size: clamp(3rem, 8vw, 6.9rem);
-  line-height: 0.9;
+  font-size: clamp(3.8rem, 8vw, 7.6rem);
+  line-height: 0.86;
   letter-spacing: 0;
 }
 
@@ -231,6 +231,39 @@ h2 {
 
 :root.ice-mode .lede {
   color: #1f3b50;
+}
+
+.hero-signals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 148px));
+  gap: 10px;
+  margin: 24px 0;
+}
+
+.hero-signals span {
+  min-height: 72px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  backdrop-filter: blur(14px);
+}
+
+.hero-signals strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1;
+  text-transform: none;
+}
+
+:root.ice-mode .hero-signals span {
+  background: rgba(255, 255, 255, 0.66);
 }
 
 .data-strip {
@@ -336,6 +369,56 @@ h2 {
   gap: 14px;
   padding: 18px;
   border-bottom: 1px solid var(--line);
+}
+
+.live-score {
+  display: grid;
+  grid-template-columns: 1fr minmax(118px, auto) 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 18px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(90deg, rgba(215, 25, 63, 0.16), rgba(12, 93, 171, 0.18));
+}
+
+.live-score > div {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+}
+
+.live-score span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.live-score strong {
+  font-size: 2.9rem;
+  line-height: 0.9;
+}
+
+.game-clock {
+  min-height: 82px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.game-clock strong {
+  font-size: 1.05rem;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.live-score.is-live {
+  background: linear-gradient(90deg, rgba(215, 25, 63, 0.34), rgba(242, 193, 78, 0.2), rgba(12, 93, 171, 0.26));
+}
+
+.live-score.is-live .game-clock span {
+  color: var(--gold);
 }
 
 .scoreboard-header span,

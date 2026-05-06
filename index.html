@@ -34,11 +34,16 @@
       <section id="top" class="hero-grid">
         <div class="hero-copy">
           <p class="eyebrow">Ronde 2 · 6 mai 2026</p>
-          <h1>Canadiens vs Sabres, suivi des séries en mode match.</h1>
+          <h1>Le cockpit des séries du CH.</h1>
           <p class="lede">
-            Un cockpit visuel pour surveiller le parcours du CH: état de la série,
-            calendrier, forces à suivre, momentum et notes rapides de partisan.
+            Score live, calendrier, stats, trios projetés et signaux clés pour
+            suivre Montréal match par match.
           </p>
+          <div class="hero-signals" aria-label="Signaux rapides">
+            <span><strong id="heroSeries">0-0</strong>Série</span>
+            <span><strong id="heroStatus">À venir</strong>État</span>
+            <span><strong id="heroLineup">Projection</strong>Trios</span>
+          </div>
           <div class="data-strip" aria-live="polite">
             <span id="dataStatus">Données intégrées</span>
             <small id="lastUpdated">Prêt pour publication</small>
@@ -59,6 +64,20 @@
           <div class="scoreboard-header">
             <span>Ronde 2</span>
             <strong id="scoreboardHeadline">Match 1 ce soir</strong>
+          </div>
+          <div class="live-score" id="liveScoreCard">
+            <div>
+              <span id="awayCode">MTL</span>
+              <strong id="awayScore">0</strong>
+            </div>
+            <div class="game-clock">
+              <span id="gameState">Avant-match</span>
+              <strong id="gameClock">19 h HE</strong>
+            </div>
+            <div>
+              <span id="homeCode">BUF</span>
+              <strong id="homeScore">0</strong>
+            </div>
           </div>
           <div class="matchup">
             <div class="team team-mtl">
