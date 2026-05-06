@@ -1,6 +1,7 @@
 const NHL_SCHEDULE_URL = "https://api-web.nhle.com/v1/club-schedule-season/MTL/now";
 const NHL_STANDINGS_URL = "https://api-web.nhle.com/v1/standings/now";
 const NHL_BASE_URL = "https://api-web.nhle.com/v1";
+const NHL_LINEUPS_URL = "https://www.nhl.com/news/nhl-lineup-projections-2025-26-season";
 
 exports.handler = async () => {
   try {
@@ -69,11 +70,12 @@ async function buildPayload(schedule, standings) {
 }
 
 async function enrichPayload(payload, mtlStanding, opponentStanding, opponentCode) {
-  const [mtlStats, opponentStats, mtlRoster, opponentRoster] = await Promise.all([
+  const [mtlStats, opponentStats, mtlRoster, opponentRoster, editorialLineups] = await Promise.all([
     fetchJson(`${NHL_BASE_URL}/club-stats/MTL/now`),
     fetchJson(`${NHL_BASE_URL}/club-stats/${opponentCode}/now`),
     fetchJson(`${NHL_BASE_URL}/roster/MTL/current`),
-    fetchJson(`${NHL_BASE_URL}/roster/${opponentCode}/current`)
+    fetchJson(`${NHL_BASE_URL}/roster/${opponentCode}/current`),
+    fetchEditorialLineups(opponentStanding?.teamCommonName?.default || opponentCode, opponentCode).catch(() => null)
   ]);
 
   return {
@@ -87,10 +89,101 @@ async function enrichPayload(payload, mtlStanding, opponentStanding, opponentCod
       leaderGroup(opponentCode, opponentStats)
     ],
     lineups: [
-      projectedLineup("MTL", mtlRoster, mtlStats),
-      projectedLineup(opponentCode, opponentRoster, opponentStats)
+      editorialLineups?.MTL || projectedLineup("MTL", mtlRoster, mtlStats),
+      editorialLineups?.opponent || projectedLineup(opponentCode, opponentRoster, opponentStats)
     ]
   };
+}
+
+async function fetchEditorialLineups(opponentName, opponentCode) {
+  const response = await fetch(NHL_LINEUPS_URL, {
+    headers: { "User-Agent": "Tableau-CH/1.0" }
+  });
+
+  if (!response.ok) {
+    throw new Error(`NHL lineup page returned ${response.status}`);
+  }
+
+  const text = normalizeArticle(await response.text());
+  const mtl = parseEditorialLineup(text, "Canadiens", opponentName);
+  const opponent = parseEditorialLineup(text, opponentName, "Status report");
+
+  if (!mtl || !opponent) {
+    throw new Error("Projected lineups not found in NHL.com article");
+  }
+
+  return {
+    MTL: { team: "MTL", status: "Projection NHL.com", ...mtl },
+    opponent: { team: opponentCode, status: "Projection NHL.com", ...opponent }
+  };
+}
+
+function normalizeArticle(html) {
+  return html
+    .replace(/\\n/g, "\n")
+    .replace(/\\"/g, '"')
+    .replace(/&amp;/g, "&")
+    .replace(/&nbsp;/g, " ")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\r/g, "");
+}
+
+function parseEditorialLineup(text, teamName, nextMarker) {
+  const heading = `${teamName} projected lineup`;
+  const start = text.indexOf(heading);
+
+  if (start < 0) {
+    return null;
+  }
+
+  const nextLineup = text.indexOf(`${nextMarker} projected lineup`, start + heading.length);
+  const statusReport = text.indexOf("Status report", start + heading.length);
+  const endCandidates = [nextLineup, statusReport].filter((index) => index > start);
+  const end = endCandidates.length ? Math.min(...endCandidates) : start + 1800;
+  const lines = text
+    .slice(start, end)
+    .split(/\n+/)
+    .map(cleanArticleLine)
+    .filter(Boolean);
+
+  const hockeyLines = lines
+    .filter((line) => !line.toLowerCase().includes("projected lineup"))
+    .filter((line) => !/^(scratched|injured|status report)/i.test(line));
+
+  const forwards = hockeyLines
+    .filter((line) => line.includes("--"))
+    .map((line) => line.split(/\s+--\s+/).map((player) => player.trim()))
+    .filter((line) => line.length === 3)
+    .slice(0, 4)
+    .map((line, index) => [`L${index + 1}`, ...line]);
+
+  const defense = hockeyLines
+    .filter((line) => line.includes("--"))
+    .map((line) => line.split(/\s+--\s+/).map((player) => player.trim()))
+    .filter((line) => line.length === 2)
+    .slice(0, 3)
+    .map((line, index) => [`D${index + 1}`, ...line]);
+
+  const goalieStartIndex = hockeyLines.findIndex((line) => line.includes("--") && line.split(/\s+--\s+/).length === 2) + 3;
+  const goalies = hockeyLines
+    .slice(Math.max(goalieStartIndex, 0))
+    .filter((line) => !line.includes("--"))
+    .slice(0, 2);
+
+  if (!forwards.length || !defense.length || !goalies.length) {
+    return null;
+  }
+
+  return { forwards, defense, goalies };
+}
+
+function cleanArticleLine(line) {
+  return line
+    .replace(/[*_`]/g, "")
+    .replace(/\\u2013|\\u2014/g, "--")
+    .replace(/[–—]/g, "--")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function findStanding(standings, teamCode) {

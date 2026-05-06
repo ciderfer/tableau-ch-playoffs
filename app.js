@@ -349,7 +349,8 @@ function playerCard(player) {
 }
 
 function renderLineups(lineups) {
-  lineupStatus.textContent = lineups.every((lineup) => lineup.status === "Confirmé") ? "Confirmé" : "Projection";
+  const statuses = [...new Set(lineups.map((lineup) => lineup.status))];
+  lineupStatus.textContent = statuses.length === 1 ? statuses[0] : "Mixte";
   lineupGrid.innerHTML = lineups
     .map((lineup) => `
       <article class="lineup-card">
