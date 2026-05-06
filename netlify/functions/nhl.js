@@ -61,6 +61,8 @@ function buildPayload(schedule, standings) {
     nextPuck: nextGame ? gameDetail(nextGame) : "À confirmer",
     mtlRecord: recordText(mtl),
     opponentRecord: recordText(opponent),
+    mtlLogo: teamLogo(nextGame, "MTL") || "https://assets.nhle.com/logos/nhl/svg/MTL_light.svg",
+    opponentLogo: nextGame ? opponentLogoFor(nextGame, "MTL") : "https://assets.nhle.com/logos/nhl/svg/BUF_light.svg",
     games: games.map(toScheduleRow)
   };
 }
@@ -128,6 +130,20 @@ function gameDetail(game) {
     : "";
 
   return `${away} @ ${home} · ${venue}${time ? ` · ${time}` : ""}${score}`;
+}
+
+function teamLogo(game, teamCode) {
+  if (!game) {
+    return "";
+  }
+
+  const team = game.awayTeam?.abbrev === teamCode ? game.awayTeam : game.homeTeam;
+  return team?.logo || team?.darkLogo || "";
+}
+
+function opponentLogoFor(game, teamCode) {
+  const opponent = game.awayTeam?.abbrev === teamCode ? game.homeTeam : game.awayTeam;
+  return opponent?.logo || opponent?.darkLogo || "";
 }
 
 function statusText(game) {

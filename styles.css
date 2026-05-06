@@ -358,73 +358,71 @@ h2 {
   overflow-wrap: anywhere;
 }
 
-.crest {
+.team-logo {
+  position: relative;
   display: grid;
   place-items: center;
-  width: 92px;
-  height: 108px;
-  filter: drop-shadow(0 18px 22px rgba(0, 0, 0, 0.34));
+  width: 104px;
+  height: 104px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 8px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04)),
+    radial-gradient(circle at 50% 15%, rgba(255, 255, 255, 0.2), transparent 56%),
+    rgba(255, 255, 255, 0.08);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
 }
 
-.crest svg {
-  width: 100%;
-  height: 100%;
-  overflow: visible;
+.team-logo::before {
+  position: absolute;
+  inset: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  content: "";
 }
 
-.crest .shield {
-  stroke: rgba(255, 255, 255, 0.7);
-  stroke-width: 3;
+.team-logo::after {
+  position: absolute;
+  inset: auto 16px 10px;
+  height: 4px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.9;
+  content: "";
 }
 
-.crest-mtl .shield {
-  fill: #0b4f94;
+.team-logo-mtl {
+  color: var(--red);
 }
 
-.crest-mtl .stripe {
-  fill: none;
-  stroke: #f8faff;
-  stroke-linecap: round;
-  stroke-width: 18;
+.team-logo-opponent {
+  color: var(--gold);
 }
 
-.crest-mtl .inner {
-  fill: #d7193f;
-  stroke: #f8faff;
-  stroke-linejoin: round;
-  stroke-width: 3;
+.team-logo img {
+  position: relative;
+  z-index: 1;
+  width: 82%;
+  height: 82%;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.3));
 }
 
-.crest-mtl .spark {
-  fill: #f2c14e;
+:root.ice-mode .team-logo {
+  border-color: rgba(8, 32, 56, 0.18);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(231, 242, 248, 0.72)),
+    radial-gradient(circle at 50% 15%, rgba(255, 255, 255, 0.88), transparent 58%);
+  box-shadow: 0 18px 32px rgba(15, 55, 88, 0.18);
 }
 
-.crest-buf .shield {
-  fill: #092f68;
+:root.ice-mode .team-logo::before {
+  border-color: rgba(8, 32, 56, 0.13);
 }
 
-.crest-buf .charge {
-  fill: #f2c14e;
-  stroke: #ffffff;
-  stroke-linejoin: round;
-  stroke-width: 2.5;
-}
-
-.crest-buf .horn,
-.crest-buf .sabre {
-  fill: none;
-  stroke: #ffffff;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 5;
-}
-
-:root.ice-mode .crest {
-  filter: drop-shadow(0 16px 22px rgba(15, 55, 88, 0.22));
-}
-
-:root.ice-mode .crest .shield {
-  stroke: rgba(8, 32, 56, 0.28);
+:root.ice-mode .team-logo img {
+  filter: drop-shadow(0 10px 14px rgba(17, 60, 94, 0.2));
 }
 
 .versus {

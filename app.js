@@ -6,6 +6,8 @@ const fallbackData = {
   nextPuck: "19 h HE · KeyBank Center",
   mtlRecord: "48-24-10",
   opponentRecord: "50-23-9",
+  mtlLogo: "https://assets.nhle.com/logos/nhl/svg/MTL_light.svg",
+  opponentLogo: "https://assets.nhle.com/logos/nhl/svg/BUF_light.svg",
   games: [
     { date: "6 mai", label: "Match 1", detail: "MTL @ BUF · KeyBank Center · 19 h HE", tag: "Ce soir" },
     { date: "8 mai", label: "Match 2", detail: "MTL @ BUF · KeyBank Center", tag: "Route" },
@@ -54,6 +56,8 @@ const seriesPill = document.querySelector("#seriesPill");
 const nextPuck = document.querySelector("#nextPuck");
 const mtlRecord = document.querySelector("#mtlRecord");
 const opponentRecord = document.querySelector("#opponentRecord");
+const mtlLogo = document.querySelector("#mtlLogo");
+const opponentLogo = document.querySelector("#opponentLogo");
 
 const storageKey = "tableau-ch-notes";
 
@@ -108,7 +112,9 @@ function normalizeScheduleData(payload) {
     source: "live",
     lastUpdated: `Mis à jour ${formatTimestamp(new Date())}`,
     headline: nextGame ? statusText(nextGame) : fallbackData.headline,
-    nextPuck: nextGame ? gameDetail(nextGame) : fallbackData.nextPuck,
+  nextPuck: nextGame ? gameDetail(nextGame) : fallbackData.nextPuck,
+    mtlLogo: teamLogo(nextGame, "MTL") || fallbackData.mtlLogo,
+    opponentLogo: nextGame ? opponentLogoFor(nextGame, "MTL") || fallbackData.opponentLogo : fallbackData.opponentLogo,
     games: uniqueGames.length ? uniqueGames.map(toScheduleRow) : fallbackData.games
   };
 }
@@ -139,6 +145,20 @@ function gameDetail(game) {
     : "";
 
   return `${away} @ ${home} · ${venue}${time ? ` · ${time}` : ""}${score}`;
+}
+
+function teamLogo(game, teamCode) {
+  if (!game) {
+    return "";
+  }
+
+  const team = game.awayTeam?.abbrev === teamCode ? game.awayTeam : game.homeTeam;
+  return team?.logo || team?.darkLogo || "";
+}
+
+function opponentLogoFor(game, teamCode) {
+  const opponent = game.awayTeam?.abbrev === teamCode ? game.homeTeam : game.awayTeam;
+  return opponent?.logo || opponent?.darkLogo || "";
 }
 
 function statusText(game) {
@@ -211,6 +231,8 @@ function renderAppData(data) {
   nextPuck.textContent = data.nextPuck;
   mtlRecord.textContent = data.mtlRecord;
   opponentRecord.textContent = data.opponentRecord;
+  mtlLogo.src = data.mtlLogo || fallbackData.mtlLogo;
+  opponentLogo.src = data.opponentLogo || fallbackData.opponentLogo;
 }
 
 function renderFactors() {
