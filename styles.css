@@ -103,11 +103,11 @@ footer {
   flex: 0 0 auto;
   width: 48px;
   height: 48px;
-  border: 1px solid rgba(255, 255, 255, 0.34);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 8px;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.04)),
-    linear-gradient(135deg, rgba(215, 25, 63, 0.94) 0 50%, rgba(12, 93, 171, 0.94) 50% 100%);
+    linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.035)),
+    linear-gradient(135deg, rgba(215, 25, 63, 0.82) 0 48%, rgba(248, 250, 255, 0.18) 48% 52%, rgba(12, 93, 171, 0.86) 52% 100%);
   box-shadow: 0 14px 28px rgba(3, 10, 20, 0.28);
 }
 
@@ -118,23 +118,37 @@ footer {
 }
 
 .mark-board {
-  fill: rgba(5, 15, 29, 0.74);
+  fill: rgba(5, 15, 29, 0.82);
   stroke: rgba(255, 255, 255, 0.82);
   stroke-width: 2;
 }
 
 .mark-grid {
   fill: none;
-  stroke: rgba(159, 230, 255, 0.86);
+  stroke: #ffffff;
   stroke-linecap: round;
-  stroke-width: 2.4;
+  stroke-linejoin: round;
+  stroke-width: 2.6;
 }
 
-.brand-mark text {
-  fill: #ffffff;
-  font-size: 17px;
-  font-weight: 950;
-  letter-spacing: 0;
+.mark-rail {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 4;
+}
+
+.mark-rail-red {
+  stroke: var(--red);
+}
+
+.mark-rail-blue {
+  stroke: var(--ice);
+}
+
+.mark-puck {
+  fill: var(--gold);
+  stroke: rgba(255, 255, 255, 0.9);
+  stroke-width: 1.2;
 }
 
 :root.ice-mode .brand-mark {
