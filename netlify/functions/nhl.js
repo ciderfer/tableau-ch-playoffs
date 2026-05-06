@@ -349,11 +349,13 @@ function seriesScore(games, teamCode, opponentCode) {
 }
 
 function toScheduleRow(game, index) {
+  const live = game.gameState === "LIVE" || game.gameState === "CRIT";
   return {
     date: shortDate(game.gameDate || game.startTimeUTC),
     label: game.seriesGameNumber ? `Match ${game.seriesGameNumber}` : `Match ${index + 1}`,
     detail: gameDetail(game),
-    tag: tagFor(game)
+    tag: tagFor(game),
+    state: live ? "live" : isFinal(game) ? "final" : "upcoming"
   };
 }
 
@@ -384,7 +386,8 @@ function gameStatus(game) {
     homeScore: Number.isInteger(home.score) ? home.score : 0,
     state: isLive ? "En direct" : isDone ? "Final" : "Avant-match",
     detail: isLive ? [period, clock].filter(Boolean).join(" · ") : isDone ? "Terminé" : shortTime(game.startTimeUTC),
-    isLive
+    isLive,
+    startTimeUTC: game.startTimeUTC || null
   };
 }
 

@@ -2,15 +2,29 @@
 <html lang="fr">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Tableau CH | Séries NHL 2026</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Tableau CH | Séries NHL 2026 — Canadiens de Montréal</title>
+    <meta name="description" content="Cockpit des séries des Canadiens de Montréal: pointage en direct, calendrier, statistiques, alignements projetés et carnet de match.">
+    <meta name="theme-color" content="#071019" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#eaf5fb" media="(prefers-color-scheme: light)">
+    <meta name="color-scheme" content="dark light">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Tableau CH — Séries NHL 2026">
+    <meta property="og:description" content="Pointage en direct, calendrier, stats et trios des Canadiens de Montréal en séries.">
+    <meta property="og:locale" content="fr_CA">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="preconnect" href="https://assets.nhle.com" crossorigin>
+    <link rel="preconnect" href="https://api-web.nhle.com" crossorigin>
     <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='8' y='8' width='48' height='48' rx='11' fill='%23071019'/%3E%3Cpath d='M16 14v36' stroke='%23d7193f' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M48 14v36' stroke='%239fe6ff' stroke-width='4' stroke-linecap='round'/%3E%3Ccircle cx='48' cy='32' r='3.4' fill='%23f2c14e'/%3E%3C/svg%3E">
   </head>
   <body>
+    <a class="skip-link" href="#top">Aller au contenu</a>
     <div class="ice-halo" aria-hidden="true"></div>
+
     <header class="hero">
       <nav class="topbar" aria-label="Navigation principale">
-        <a class="brand" href="#top" aria-label="Retour en haut">
+        <a class="brand" href="#top" aria-label="Tableau CH — retour en haut">
           <span class="brand-mark" aria-hidden="true">
             <svg viewBox="0 0 64 64" role="img" aria-label="Marque Tableau CH">
               <rect class="mark-board" x="8" y="8" width="48" height="48" rx="11"></rect>
@@ -25,14 +39,19 @@
             <small>Séries NHL 2026</small>
           </span>
         </a>
-        <div class="nav-actions">
-          <a href="#calendrier">Calendrier</a>
-          <a href="#series">Portrait</a>
-          <a href="#stats">Stats</a>
-          <a href="#notes">Notes</a>
-          <button class="theme-action" id="themeToggle" type="button" aria-pressed="false">
-            <span aria-hidden="true">◐</span>
-            Glace
+
+        <button class="nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="primaryNav" aria-label="Ouvrir le menu">
+          <span class="nav-toggle-bars" aria-hidden="true"></span>
+        </button>
+
+        <div class="nav-actions" id="primaryNav" data-nav>
+          <a href="#calendrier" data-spy="calendrier">Calendrier</a>
+          <a href="#series" data-spy="series">Portrait</a>
+          <a href="#stats" data-spy="stats">Stats</a>
+          <a href="#notes" data-spy="notes">Notes</a>
+          <button class="theme-action" id="themeToggle" type="button" aria-pressed="false" title="Basculer le thème">
+            <span class="theme-icon" aria-hidden="true">◐</span>
+            <span class="theme-label">Glace</span>
           </button>
         </div>
       </nav>
@@ -45,6 +64,12 @@
             Score live, calendrier, stats, trios projetés et signaux clés pour
             suivre Montréal match par match.
           </p>
+          <dl class="puck-countdown" id="puckCountdown" aria-label="Décompte avant la prochaine mise au jeu" hidden>
+            <div><dt>Jours</dt><dd id="cdDays">0</dd></div>
+            <div><dt>Heures</dt><dd id="cdHours">0</dd></div>
+            <div><dt>Minutes</dt><dd id="cdMinutes">0</dd></div>
+            <div><dt>Secondes</dt><dd id="cdSeconds">0</dd></div>
+          </dl>
         </div>
 
         <aside class="scoreboard" aria-label="Résumé de la série">
@@ -73,7 +98,7 @@
           <div class="matchup">
             <div class="team team-mtl">
               <span class="team-logo team-logo-mtl">
-                <img id="mtlLogo" src="https://assets.nhle.com/logos/nhl/svg/MTL_light.svg" alt="Logo des Canadiens de Montréal">
+                <img id="mtlLogo" src="https://assets.nhle.com/logos/nhl/svg/MTL_light.svg" alt="Logo des Canadiens de Montréal" width="104" height="104" fetchpriority="high" decoding="async">
               </span>
               <strong>Canadiens</strong>
               <small id="mtlRecord">48-24-10</small>
@@ -84,7 +109,7 @@
             </div>
             <div class="team team-buf">
               <span class="team-logo team-logo-opponent">
-                <img id="opponentLogo" src="https://assets.nhle.com/logos/nhl/svg/BUF_light.svg" alt="Logo des Sabres de Buffalo">
+                <img id="opponentLogo" src="https://assets.nhle.com/logos/nhl/svg/BUF_light.svg" alt="Logo de l'équipe adverse" width="104" height="104" fetchpriority="high" decoding="async">
               </span>
               <strong>Sabres</strong>
               <small id="opponentRecord">50-23-9</small>
@@ -94,16 +119,20 @@
       </section>
     </header>
 
+    <noscript>
+      <p class="noscript-banner">JavaScript est nécessaire pour les données en direct. Le contenu intégré reste consultable ci-dessous.</p>
+    </noscript>
+
     <main>
-      <section id="calendrier" class="section-grid">
+      <section id="calendrier" class="section-grid" aria-labelledby="calendrier-title">
         <div>
           <p class="eyebrow">Calendrier</p>
-          <h2>Route de la ronde 2</h2>
+          <h2 id="calendrier-title">Route de la ronde 2</h2>
         </div>
         <div class="schedule" id="scheduleList" aria-live="polite"></div>
       </section>
 
-      <section id="series" class="dashboard">
+      <section id="series" class="dashboard" aria-label="Portrait de la série">
         <div class="panel span-2">
           <div class="panel-title">
             <div>
@@ -147,11 +176,11 @@
         </div>
       </section>
 
-      <section id="stats" class="stats-section">
+      <section id="stats" class="stats-section" aria-labelledby="stats-title">
         <div class="panel-title">
           <div>
-            <p class="eyebrow">Stats & Alignements</p>
-            <h2>Le portrait hockey, pas juste le score.</h2>
+            <p class="eyebrow">Stats &amp; Alignements</p>
+            <h2 id="stats-title">Le portrait hockey, pas juste le score.</h2>
           </div>
           <span class="status-pill">NHL + NHL.com</span>
         </div>
@@ -190,25 +219,36 @@
         </div>
       </section>
 
-      <section id="notes" class="notes-section">
+      <section id="notes" class="notes-section" aria-labelledby="notes-title">
         <div class="notes-copy">
           <p class="eyebrow">Carnet de match</p>
-          <h2>Garde tes observations pendant la série.</h2>
+          <h2 id="notes-title">Garde tes observations pendant la série.</h2>
           <p>
             Tes notes restent dans ce navigateur. Pratique pour suivre les trios,
             les unités spéciales ou les moments qui changent le ton du match.
           </p>
+          <p class="notes-meta" id="notesMeta" aria-live="polite">0 note</p>
         </div>
-        <form class="note-composer" id="noteForm">
+        <form class="note-composer" id="noteForm" novalidate>
           <label for="noteInput">Nouvelle note</label>
           <div class="composer-row">
-            <input id="noteInput" type="text" placeholder="Ex.: surveiller le jeu de puissance en 1re période" autocomplete="off">
+            <input id="noteInput" type="text" placeholder="Ex.: surveiller le jeu de puissance en 1re période" autocomplete="off" maxlength="240">
             <button type="submit">Ajouter</button>
           </div>
           <div class="notes-list" id="notesList" aria-live="polite"></div>
+          <div class="notes-actions">
+            <button type="button" id="copyNotes" class="ghost-btn" data-disabled-when-empty>Copier toutes les notes</button>
+            <button type="button" id="clearNotes" class="ghost-btn ghost-btn-danger" data-disabled-when-empty>Tout effacer</button>
+          </div>
         </form>
       </section>
     </main>
+
+    <aside class="mini-score" id="miniScore" aria-hidden="true">
+      <span class="mini-team"><strong id="miniAwayCode">MTL</strong> <em id="miniAwayScore">0</em></span>
+      <span class="mini-state" id="miniState">19 h HE</span>
+      <span class="mini-team mini-team-home"><em id="miniHomeScore">0</em> <strong id="miniHomeCode">BUF</strong></span>
+    </aside>
 
     <footer>
       <span>Données NHL mises à jour automatiquement; notes privées par navigateur.</span>
@@ -216,6 +256,6 @@
       <a href="https://www.nhl.com/news/nhl-lineup-projections-2025-26-season">Trios projetés NHL.com</a>
     </footer>
 
-    <script src="app.js"></script>
+    <script src="app.js" defer></script>
   </body>
 </html>
