@@ -47,7 +47,6 @@
 
         <div class="nav-actions" id="primaryNav" data-nav>
           <a href="#calendrier" data-spy="calendrier">Calendrier</a>
-          <a href="#series" data-spy="series">Portrait</a>
           <a href="#stats" data-spy="stats">Stats</a>
           <a href="#notes" data-spy="notes">Notes</a>
           <button class="theme-action" id="alertsToggle" type="button" aria-pressed="false" title="Alertes sonores quand le CH marque">
@@ -159,50 +158,6 @@
         <ol class="goal-list" id="goalList" aria-live="polite"></ol>
       </section>
 
-      <section id="series" class="dashboard" aria-label="Portrait de la série">
-        <div class="panel span-2">
-          <div class="panel-title">
-            <div>
-              <p class="eyebrow">Portrait</p>
-              <h2>Ce qui peut faire basculer la série</h2>
-            </div>
-          </div>
-          <div class="factor-grid" id="factorGrid"></div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-title">
-            <div>
-              <p class="eyebrow">Bracket</p>
-              <h2>Atlantique</h2>
-            </div>
-          </div>
-          <div class="bracket">
-            <div class="bracket-team advanced">
-              <span>BUF</span>
-              <strong>4</strong>
-              <small>vs BOS</small>
-            </div>
-            <div class="bracket-team">
-              <span>BOS</span>
-              <strong>2</strong>
-              <small>éliminé</small>
-            </div>
-            <div class="bracket-line" aria-hidden="true"></div>
-            <div class="bracket-team advanced">
-              <span>MTL</span>
-              <strong>4</strong>
-              <small>vs TBL</small>
-            </div>
-            <div class="bracket-team">
-              <span>TBL</span>
-              <strong>3</strong>
-              <small>éliminé</small>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section id="stats" class="stats-section" aria-labelledby="stats-title">
         <div class="panel-title">
           <div>
@@ -240,7 +195,10 @@
               <p class="eyebrow">Trios</p>
               <h2>Alignements projetés</h2>
             </div>
-            <span class="status-pill" id="lineupStatus">Projection</span>
+            <div class="lineup-meta">
+              <span class="status-pill" id="lineupStatus">Projection</span>
+              <small class="lineup-updated" id="lineupUpdated"></small>
+            </div>
           </div>
           <div class="lineup-grid" id="lineupGrid"></div>
         </div>

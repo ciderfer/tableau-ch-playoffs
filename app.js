@@ -86,34 +86,10 @@ const fallbackData = {
   ]
 };
 
-const factors = [
-  {
-    icon: "PP",
-    title: "Avantage numérique",
-    text: "Montréal arrive avec une occasion claire: rallumer le jeu de puissance après une fin de ronde plus froide."
-  },
-  {
-    icon: "G",
-    title: "Duel Dobes-Lyon",
-    text: "Jakub Dobes et Alex Lyon sont deux points d’ancrage de cette série. Le premier but pourrait peser lourd."
-  },
-  {
-    icon: "R",
-    title: "Départ sur la route",
-    text: "Le CH a déjà gagné trois fois à Tampa Bay. Le bruit adverse n’est pas forcément une mauvaise nouvelle."
-  },
-  {
-    icon: "13",
-    title: "Équilibre parfait",
-    text: "En saison régulière, chaque club a gagné deux matchs et marqué 13 buts. Le détail va décider."
-  }
-];
-
 const $ = (selector) => document.querySelector(selector);
 
 const els = {
   scheduleList: $("#scheduleList"),
-  factorGrid: $("#factorGrid"),
   noteForm: $("#noteForm"),
   noteInput: $("#noteInput"),
   notesList: $("#notesList"),
@@ -145,6 +121,7 @@ const els = {
   leaderGrid: $("#leaderGrid"),
   lineupGrid: $("#lineupGrid"),
   lineupStatus: $("#lineupStatus"),
+  lineupUpdated: $("#lineupUpdated"),
   miniScore: $("#miniScore"),
   miniAwayCode: $("#miniAwayCode"),
   miniHomeCode: $("#miniHomeCode"),
@@ -444,6 +421,7 @@ function renderAppData(data) {
   renderTeamStats(data.teamStats || fallbackData.teamStats);
   renderLeaders(data.leaders || fallbackData.leaders);
   renderLineups(data.lineups || fallbackData.lineups);
+  renderLineupUpdated(data.lastUpdated);
   renderPeriodScores(data.periodScores);
   renderStrengthState(data.focusContext?.strengthState);
   renderGoalFeed(data.recentGoals, data.focusContext);
@@ -861,16 +839,9 @@ function lineRow(line) {
   `;
 }
 
-function renderFactors() {
-  els.factorGrid.innerHTML = factors
-    .map((factor) => `
-      <article class="factor">
-        <span aria-hidden="true">${escapeHtml(factor.icon)}</span>
-        <h3>${escapeHtml(factor.title)}</h3>
-        <p>${escapeHtml(factor.text)}</p>
-      </article>
-    `)
-    .join("");
+function renderLineupUpdated(lastUpdatedText) {
+  if (!els.lineupUpdated) return;
+  els.lineupUpdated.textContent = lastUpdatedText || "";
 }
 
 // ---------------------- Notes ----------------------
@@ -926,9 +897,29 @@ function renderNotes() {
 function addNote(text) {
   const trimmed = text.trim();
   if (!trimmed) return;
-  const notes = [{ text: trimmed, ts: Date.now() }, ...getNotes()].slice(0, MAX_NOTES);
+  const prefix = noteContextPrefix();
+  const final = prefix && !trimmed.startsWith("[") ? `${prefix}${trimmed}` : trimmed;
+  const notes = [{ text: final, ts: Date.now() }, ...getNotes()].slice(0, MAX_NOTES);
   saveNotes(notes);
   renderNotes();
+}
+
+function noteContextPrefix() {
+  if (!lastStatus?.isLive) return "";
+
+  const periodLabel = lastData?.focusContext?.currentPeriod?.label || "";
+  const detailParts = (lastStatus.detail || "").split("·").map((s) => s.trim());
+  const time = detailParts.find((part) => /^\d{1,2}:\d{2}$/.test(part)) || "";
+  const mtlIsAway = lastStatus.awayCode === "MTL";
+  const mtlScore = mtlIsAway ? lastStatus.awayScore : lastStatus.homeScore;
+  const oppScore = mtlIsAway ? lastStatus.homeScore : lastStatus.awayScore;
+  const oppCode = mtlIsAway ? lastStatus.homeCode : lastStatus.awayCode;
+
+  if (!Number.isInteger(mtlScore) || !Number.isInteger(oppScore)) return "";
+
+  const periodAndTime = [periodLabel, time].filter(Boolean).join(" ");
+  const score = `MTL ${mtlScore}-${oppScore} ${oppCode}`;
+  return periodAndTime ? `[${periodAndTime}, ${score}] ` : `[${score}] `;
 }
 
 function deleteNote(index) {
@@ -1148,7 +1139,7 @@ function setupNav() {
     }
   });
 
-  const sections = ["calendrier", "series", "stats", "notes"]
+  const sections = ["calendrier", "stats", "notes"]
     .map((id) => document.getElementById(id))
     .filter(Boolean);
   const links = new Map(
@@ -1238,7 +1229,6 @@ function init() {
   setupNav();
   setupMiniScore();
   renderAppData(fallbackData);
-  renderFactors();
   renderNotes();
   startPolling();
 }
