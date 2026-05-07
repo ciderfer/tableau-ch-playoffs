@@ -111,10 +111,17 @@ async function fetchGameDetails(game) {
   const id = game.id || game.gamePk;
   if (!id) return null;
 
-  const landing = await fetchJson(`${NHL_BASE_URL}/gamecenter/${id}/landing`);
+  const isLive = game.gameState === "LIVE" || game.gameState === "CRIT";
+  const [landing, playByPlay] = await Promise.all([
+    fetchJson(`${NHL_BASE_URL}/gamecenter/${id}/landing`),
+    isLive ? fetchJson(`${NHL_BASE_URL}/gamecenter/${id}/play-by-play`).catch(() => null) : Promise.resolve(null)
+  ]);
   const summary = landing?.summary || {};
   const linescore = summary.linescore || {};
   const byPeriod = Array.isArray(linescore.byPeriod) ? linescore.byPeriod : [];
+  const shotsByPeriod = Array.isArray(linescore.shotsByPeriod) ? linescore.shotsByPeriod : [];
+  const totalShotsAway = shotsByPeriod.reduce((sum, row) => sum + (Number.isInteger(row.away) ? row.away : 0), 0);
+  const totalShotsHome = shotsByPeriod.reduce((sum, row) => sum + (Number.isInteger(row.home) ? row.home : 0), 0);
   const periodScores = {
     awayCode: landing?.awayTeam?.abbrev || game.awayTeam?.abbrev || "VIS",
     homeCode: landing?.homeTeam?.abbrev || game.homeTeam?.abbrev || "DOM",
@@ -124,7 +131,14 @@ async function fetchGameDetails(game) {
       home: Number.isInteger(row.home) ? row.home : 0
     })),
     totalAway: linescore.totals?.away ?? landing?.awayTeam?.score ?? 0,
-    totalHome: linescore.totals?.home ?? landing?.homeTeam?.score ?? 0
+    totalHome: linescore.totals?.home ?? landing?.homeTeam?.score ?? 0,
+    shotRows: shotsByPeriod.length ? shotsByPeriod.map((row) => ({
+      label: periodLabel(row.periodDescriptor),
+      away: Number.isInteger(row.away) ? row.away : 0,
+      home: Number.isInteger(row.home) ? row.home : 0
+    })) : null,
+    totalShotsAway: shotsByPeriod.length ? totalShotsAway : null,
+    totalShotsHome: shotsByPeriod.length ? totalShotsHome : null
   };
 
   const scoring = Array.isArray(summary.scoring) ? summary.scoring : [];
@@ -146,20 +160,66 @@ async function fetchGameDetails(game) {
 
   const recentGoals = flatGoals.reverse();
   const currentPeriodDescriptor = game.periodDescriptor || landing?.periodDescriptor || null;
+  const strengthState = isLive && playByPlay ? readStrengthState(playByPlay) : null;
 
   return {
     periodScores: periodScores.rows.length ? periodScores : null,
     recentGoals: recentGoals.length ? recentGoals : null,
     context: {
-      isLive: game.gameState === "LIVE" || game.gameState === "CRIT",
+      isLive,
       isFinal: isFinal(game),
       label: game.seriesGameNumber ? `Match ${game.seriesGameNumber}` : "Match",
       currentPeriod: currentPeriodDescriptor ? {
         number: currentPeriodDescriptor.number ?? null,
         type: currentPeriodDescriptor.periodType ?? null,
         label: periodLabel(currentPeriodDescriptor)
-      } : null
+      } : null,
+      strengthState
     }
+  };
+}
+
+function readStrengthState(playByPlay) {
+  const plays = Array.isArray(playByPlay?.plays) ? playByPlay.plays : [];
+  if (!plays.length) return null;
+
+  let latest = null;
+  for (let i = plays.length - 1; i >= 0; i--) {
+    const code = plays[i]?.situationCode;
+    if (typeof code === "string" && code.length === 4) {
+      latest = plays[i];
+      break;
+    }
+  }
+  if (!latest) return null;
+
+  const code = latest.situationCode;
+  const awaySkaters = parseInt(code[1], 10);
+  const homeSkaters = parseInt(code[2], 10);
+  if (!Number.isInteger(awaySkaters) || !Number.isInteger(homeSkaters)) return null;
+
+  const awayCode = playByPlay.awayTeam?.abbrev || "VIS";
+  const homeCode = playByPlay.homeTeam?.abbrev || "DOM";
+
+  if (awaySkaters === homeSkaters) {
+    // Even strength (5v5, or oddities like 4v4 / 3v3 in OT)
+    return {
+      awaySkaters,
+      homeSkaters,
+      awayCode,
+      homeCode,
+      isPowerPlay: false
+    };
+  }
+
+  return {
+    awaySkaters,
+    homeSkaters,
+    awayCode,
+    homeCode,
+    isPowerPlay: true,
+    advantageTeam: awaySkaters > homeSkaters ? awayCode : homeCode,
+    shorthandedTeam: awaySkaters < homeSkaters ? awayCode : homeCode
   };
 }
 

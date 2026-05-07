@@ -686,6 +686,72 @@ h2 {
   color: var(--gold);
 }
 
+.strength-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 9px 18px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+.strength-bar[hidden] {
+  display: none;
+}
+
+.strength-label {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.strength-bar.is-mtl-pp {
+  background: rgba(46, 167, 87, 0.22);
+  color: #b9e8c4;
+}
+
+.strength-bar.is-mtl-pp .strength-label {
+  background: rgba(46, 167, 87, 0.32);
+}
+
+.strength-bar.is-mtl-pk {
+  background: rgba(215, 25, 63, 0.24);
+  color: #ffd1dc;
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+.strength-bar.is-mtl-pk .strength-label {
+  background: rgba(215, 25, 63, 0.36);
+}
+
+:root.ice-mode .strength-bar {
+  background: rgba(7, 38, 62, 0.06);
+  color: #455a6f;
+}
+
+:root.ice-mode .strength-bar.is-mtl-pp {
+  background: rgba(46, 130, 80, 0.18);
+  color: #20633c;
+}
+
+:root.ice-mode .strength-bar.is-mtl-pk {
+  background: rgba(215, 25, 63, 0.18);
+  color: #8c1230;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .strength-bar.is-mtl-pk {
+    animation: none;
+  }
+}
+
 .period-table {
   width: 100%;
   border-bottom: 1px solid var(--line);
@@ -736,6 +802,32 @@ h2 {
 
 .period-table tbody tr + tr {
   border-top: 1px solid var(--line);
+}
+
+.period-table tbody.shots {
+  border-top: 2px solid var(--line);
+}
+
+.period-table tbody.shots th[scope="rowgroup"] {
+  padding: 6px 8px 6px 18px;
+  color: var(--muted);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 800;
+  text-align: left;
+}
+
+.period-table tbody.shots th[scope="row"],
+.period-table tbody.shots td {
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.period-table tbody.shots td.is-total {
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
 .goal-feed {

@@ -159,6 +159,10 @@ const els = {
   periodTable: $("#periodTable"),
   periodHeader: $("#periodHeader"),
   periodBody: $("#periodBody"),
+  strengthBar: $("#strengthBar"),
+  strengthLabel: $("#strengthLabel"),
+  strengthDetail: $("#strengthDetail"),
+  periodShotsBody: $("#periodShotsBody"),
   goalFeed: $("#goals"),
   goalList: $("#goalList"),
   goalFeedEyebrow: $("#goalFeedEyebrow"),
@@ -441,6 +445,7 @@ function renderAppData(data) {
   renderLeaders(data.leaders || fallbackData.leaders);
   renderLineups(data.lineups || fallbackData.lineups);
   renderPeriodScores(data.periodScores);
+  renderStrengthState(data.focusContext?.strengthState);
   renderGoalFeed(data.recentGoals, data.focusContext);
   updateCountdown(status);
   els.scoreMeta?.classList.toggle("is-live", Boolean(status.isLive));
@@ -478,25 +483,72 @@ function renderGameStatus(status, recentGoals, previousStatus) {
 function renderPeriodScores(scores) {
   if (!scores || !Array.isArray(scores.rows) || !scores.rows.length) {
     els.periodTable.hidden = true;
+    if (els.periodShotsBody) els.periodShotsBody.hidden = true;
     return;
   }
 
+  const columnCount = scores.rows.length + 2;
   const headerCells = ['<th scope="col">Équipe</th>']
     .concat(scores.rows.map((row) => `<th scope="col">${escapeHtml(row.label)}</th>`))
     .concat('<th scope="col">T</th>')
     .join("");
   els.periodHeader.innerHTML = headerCells;
 
-  const buildRow = (code, key, total) => {
-    const cells = scores.rows.map((row) => `<td>${escapeHtml(String(row[key]))}</td>`).join("");
+  const buildRow = (code, rows, key, total) => {
+    const cells = rows.map((row) => `<td>${escapeHtml(String(row[key] ?? "—"))}</td>`).join("");
     return `<tr><th scope="row">${escapeHtml(code)}</th>${cells}<td class="is-total">${escapeHtml(String(total))}</td></tr>`;
   };
 
   els.periodBody.innerHTML = [
-    buildRow(scores.awayCode, "away", scores.totalAway),
-    buildRow(scores.homeCode, "home", scores.totalHome)
+    buildRow(scores.awayCode, scores.rows, "away", scores.totalAway),
+    buildRow(scores.homeCode, scores.rows, "home", scores.totalHome)
   ].join("");
+
+  if (els.periodShotsBody) {
+    if (Array.isArray(scores.shotRows) && scores.shotRows.length) {
+      els.periodShotsBody.innerHTML = [
+        `<tr><th scope="rowgroup" colspan="${columnCount}">Tirs au but</th></tr>`,
+        buildRow(scores.awayCode, scores.shotRows, "away", scores.totalShotsAway ?? 0),
+        buildRow(scores.homeCode, scores.shotRows, "home", scores.totalShotsHome ?? 0)
+      ].join("");
+      els.periodShotsBody.hidden = false;
+    } else {
+      els.periodShotsBody.innerHTML = "";
+      els.periodShotsBody.hidden = true;
+    }
+  }
+
   els.periodTable.hidden = false;
+}
+
+function renderStrengthState(state) {
+  if (!els.strengthBar) return;
+
+  if (!state || !state.isPowerPlay) {
+    els.strengthBar.hidden = true;
+    els.strengthBar.classList.remove("is-mtl-pp", "is-mtl-pk");
+    return;
+  }
+
+  const mtlIsAdvantage = state.advantageTeam === "MTL";
+  const mtlIsShort = state.shorthandedTeam === "MTL";
+
+  els.strengthBar.classList.toggle("is-mtl-pp", mtlIsAdvantage);
+  els.strengthBar.classList.toggle("is-mtl-pk", mtlIsShort);
+
+  const mtlIsAway = state.awayCode === "MTL";
+  const skatersFromMtl = mtlIsAway
+    ? `${state.awaySkaters}v${state.homeSkaters}`
+    : `${state.homeSkaters}v${state.awaySkaters}`;
+
+  els.strengthLabel.textContent = skatersFromMtl;
+  els.strengthDetail.textContent = mtlIsAdvantage
+    ? `MTL en avantage numérique`
+    : mtlIsShort
+      ? `MTL en désavantage numérique`
+      : `${state.advantageTeam} en avantage`;
+
+  els.strengthBar.hidden = false;
 }
 
 function renderGoalFeed(goals, context) {
