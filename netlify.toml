@@ -5,4 +5,4 @@
 [[headers]]
   for = "/.netlify/functions/nhl"
   [headers.values]
-    Cache-Control = "public, max-age=60"
+    Cache-Control = "public, max-age=15, stale-while-revalidate=60"

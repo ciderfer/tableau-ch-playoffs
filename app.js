@@ -168,13 +168,24 @@ const els = {
 const STORAGE_KEY_NOTES = "tableau-ch-notes";
 const STORAGE_KEY_THEME = "tableau-ch-theme";
 const STORAGE_KEY_ALERTS = "tableau-ch-alerts";
-const POLL_INTERVAL_MS = 60_000;
 const MAX_NOTES = 50;
+
+const POLL_LIVE_MS = 15_000;
+const POLL_KICKOFF_SOON_MS = 30_000;
+const POLL_DEFAULT_MS = 60_000;
+const POLL_IDLE_MS = 5 * 60_000;
+const STALE_AFTER_MS = 90_000;
+const BROKEN_AFTER_MS = 5 * 60_000;
 
 let pollTimer = null;
 let inflightController = null;
 let countdownTimer = null;
 let lastStatus = null;
+let lastEtag = null;
+let lastData = null;
+let lastSuccessAt = Date.now();
+let hasRenderedOnce = false;
+let freshnessTimer = null;
 
 // ---------------------- Data fetching ----------------------
 
@@ -187,16 +198,26 @@ async function fetchLiveData() {
   const { signal } = inflightController;
 
   const endpoints = [
-    { url: "/.netlify/functions/nhl", normalize: normalizeFunctionData },
-    { url: "https://api-web.nhle.com/v1/club-schedule-season/MTL/now", normalize: normalizeScheduleData }
+    { url: "/.netlify/functions/nhl", normalize: normalizeFunctionData, useEtag: true },
+    { url: "https://api-web.nhle.com/v1/club-schedule-season/MTL/now", normalize: normalizeScheduleData, useEtag: false }
   ];
 
   for (const endpoint of endpoints) {
     try {
-      const response = await fetch(endpoint.url, { cache: "no-store", signal });
+      const headers = endpoint.useEtag && lastEtag ? { "If-None-Match": lastEtag } : undefined;
+      const response = await fetch(endpoint.url, { cache: "no-store", signal, headers });
+
+      if (response.status === 304) {
+        return { __unchanged: true };
+      }
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
+      }
+
+      if (endpoint.useEtag) {
+        const newEtag = response.headers.get("ETag");
+        if (newEtag) lastEtag = newEtag;
       }
 
       const payload = await response.json();
@@ -209,7 +230,7 @@ async function fetchLiveData() {
     }
   }
 
-  return fallbackData;
+  return { __failed: true };
 }
 
 function normalizeFunctionData(payload) {
@@ -962,19 +983,93 @@ function updateCountdown(status) {
 
 // ---------------------- Polling lifecycle ----------------------
 
+function pickInterval(data) {
+  const status = data?.gameStatus;
+  if (status?.isLive) return POLL_LIVE_MS;
+
+  if (status?.startTimeUTC) {
+    const msToStart = new Date(status.startTimeUTC).getTime() - Date.now();
+    if (msToStart > 0 && msToStart < 60 * 60_000) return POLL_KICKOFF_SOON_MS;
+    if (msToStart > 24 * 60 * 60_000) return POLL_IDLE_MS;
+  }
+
+  return POLL_DEFAULT_MS;
+}
+
+async function runPoll() {
+  const result = await fetchLiveData();
+
+  if (result === null) {
+    // Aborted — another runPoll has taken over, do not reschedule from here.
+    return;
+  }
+
+  if (result.__failed) {
+    markFreshness(false);
+    if (!hasRenderedOnce) {
+      renderAppData(fallbackData);
+      hasRenderedOnce = true;
+    }
+    scheduleNextPoll(lastData);
+    return;
+  }
+
+  if (result.__unchanged) {
+    markFreshness(true);
+    scheduleNextPoll(lastData);
+    return;
+  }
+
+  markFreshness(true);
+  lastData = result;
+  renderAppData(result);
+  hasRenderedOnce = true;
+  scheduleNextPoll(result);
+}
+
+function scheduleNextPoll(data) {
+  if (pollTimer) clearTimeout(pollTimer);
+  pollTimer = setTimeout(runPoll, pickInterval(data));
+}
+
 function startPolling() {
   stopPolling();
-  fetchLiveData().then((data) => { if (data) renderAppData(data); });
-  pollTimer = setInterval(() => {
-    fetchLiveData().then((data) => { if (data) renderAppData(data); });
-  }, POLL_INTERVAL_MS);
+  runPoll();
 }
 
 function stopPolling() {
   if (pollTimer) {
-    clearInterval(pollTimer);
+    clearTimeout(pollTimer);
     pollTimer = null;
   }
+  if (inflightController) {
+    inflightController.abort();
+    inflightController = null;
+  }
+}
+
+function markFreshness(success) {
+  if (success) lastSuccessAt = Date.now();
+  updateFreshnessClass();
+}
+
+function updateFreshnessClass() {
+  if (!els.scoreMeta) return;
+  const age = Date.now() - lastSuccessAt;
+  els.scoreMeta.classList.remove("is-stale", "is-broken");
+  if (age >= BROKEN_AFTER_MS) {
+    els.scoreMeta.classList.add("is-broken");
+    els.scoreMeta.title = `Données non rafraîchies depuis ${Math.round(age / 60_000)} min`;
+  } else if (age >= STALE_AFTER_MS) {
+    els.scoreMeta.classList.add("is-stale");
+    els.scoreMeta.title = `Dernier rafraîchissement il y a ${Math.max(1, Math.round(age / 60_000))} min`;
+  } else {
+    els.scoreMeta.title = "Données NHL fraîches";
+  }
+}
+
+if (!freshnessTimer) {
+  freshnessTimer = setInterval(updateFreshnessClass, 20_000);
 }
 
 document.addEventListener("visibilitychange", () => {
