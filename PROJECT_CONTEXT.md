@@ -57,8 +57,9 @@
 
 ## Operational Notes
 
+- Treat `main` as production-ready only. Use short branches and PR previews for routine changes.
+- Check Netlify credits before relying on automatic production deploys.
 - Run `node --check app.js` and `node --check netlify/functions/nhl.js` before commits.
 - Keep commits focused and deploy via GitHub to Netlify.
 - Avoid adding secrets, tokens, or personal credentials to the repository.
 - Do not make notes public without moderation or authentication.
-

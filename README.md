@@ -52,7 +52,15 @@ node --check netlify/functions/nhl.js
 
 ## Deployment
 
-Le site est relié à Netlify. Tout push sur `main` déclenche un déploiement.
+Le site est relié à Netlify. `main` est la branche de production; tout push sur `main` déclenche un déploiement si les crédits Netlify sont disponibles.
+
+Workflow recommandé:
+
+1. Créer une branche courte pour chaque changement.
+2. Ouvrir une PR et vérifier le deploy preview Netlify.
+3. Lancer les vérifications locales nécessaires.
+4. Merger dans `main` seulement quand le preview est validé.
+5. Vérifier la production après le déploiement.
 
 ```bash
 git status
@@ -60,3 +68,9 @@ git push
 netlify watch
 ```
 
+Avant une mise en public plus large:
+
+- Vérifier le solde de crédits Netlify.
+- Configurer un domaine personnalisé et HTTPS.
+- Garder les données NHL côté fonction serveur.
+- Garder la mention de non-affiliation visible.
