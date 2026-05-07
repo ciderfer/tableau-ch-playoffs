@@ -1277,6 +1277,15 @@ function setupAlerts() {
   els.alertsToggle.addEventListener("click", toggleAlerts);
 }
 
+function setupServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  // Browsers refuse SW registration on insecure origins (file://, plain http
+  // outside localhost). Try anyway and let the browser reject silently.
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
+
 function init() {
   setupTheme();
   setupAlerts();
@@ -1286,6 +1295,7 @@ function init() {
   renderAppData(fallbackData);
   renderNotes();
   startPolling();
+  setupServiceWorker();
 }
 
 init();
