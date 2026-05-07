@@ -1195,19 +1195,9 @@ main {
   color: #8c1230;
 }
 
-.dashboard {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
-}
-
 .panel {
   border-radius: 12px;
   padding: 22px;
-}
-
-.span-2 {
-  grid-column: span 2;
 }
 
 .panel-title {
@@ -1225,95 +1215,6 @@ main {
   color: var(--ice);
   font-size: 0.9rem;
   font-weight: 950;
-}
-
-.factor-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
-.factor {
-  min-height: 142px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.06);
-  transition: transform 0.2s var(--ease), border-color 0.2s var(--ease);
-}
-
-.factor:hover {
-  transform: translateY(-2px);
-  border-color: rgba(159, 230, 255, 0.32);
-}
-
-.factor span {
-  display: inline-grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  margin-bottom: 18px;
-  border-radius: 8px;
-  background: rgba(215, 25, 63, 0.18);
-  color: #fff;
-  font-weight: 900;
-}
-
-:root.ice-mode .factor span {
-  color: #fff;
-}
-
-.factor h3 {
-  margin: 0 0 8px;
-  font-size: 1rem;
-}
-
-.factor p {
-  margin-bottom: 0;
-  color: var(--muted);
-  line-height: 1.45;
-}
-
-.bracket {
-  display: grid;
-  gap: 10px;
-}
-
-.bracket-team {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 4px 12px;
-  align-items: center;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.bracket-team span,
-.bracket-team strong {
-  font-weight: 950;
-}
-
-.bracket-team strong {
-  font-variant-numeric: tabular-nums;
-}
-
-.bracket-team small {
-  grid-column: 1 / -1;
-  color: var(--muted);
-}
-
-.bracket-team.advanced {
-  border-color: rgba(159, 230, 255, 0.36);
-  background: linear-gradient(135deg, rgba(159, 230, 255, 0.08), rgba(255, 255, 255, 0.06));
-}
-
-.bracket-line {
-  width: 2px;
-  height: 18px;
-  margin-left: 18px;
-  background: var(--line);
 }
 
 .stats-section {
@@ -1503,6 +1404,24 @@ main {
 
 .lineup-card-header strong {
   font-size: 1.2rem;
+}
+
+.lineup-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.lineup-updated {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.lineup-updated:empty {
+  display: none;
 }
 
 .line-block {
@@ -1811,16 +1730,10 @@ footer a:hover {
     margin-bottom: 8px;
   }
 
-  .dashboard,
-  .factor-grid,
   .stats-layout,
   .leader-grid,
   .lineup-grid {
     grid-template-columns: 1fr;
-  }
-
-  .span-2 {
-    grid-column: auto;
   }
 }
 
