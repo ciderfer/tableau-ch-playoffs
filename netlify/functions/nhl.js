@@ -106,6 +106,8 @@ async function fetchGameDetails(game) {
     const goals = Array.isArray(period.goals) ? period.goals : [];
     return goals.map((goal) => ({
       period: periodLabel(period.periodDescriptor),
+      periodNumber: period.periodDescriptor?.number ?? null,
+      periodType: period.periodDescriptor?.periodType ?? null,
       time: goal.timeInPeriod || "",
       team: goal.teamAbbrev?.default || "",
       scorer: [goal.firstName?.default, goal.lastName?.default].filter(Boolean).join(" "),
@@ -116,7 +118,8 @@ async function fetchGameDetails(game) {
     }));
   });
 
-  const recentGoals = flatGoals.slice(-3).reverse();
+  const recentGoals = flatGoals.reverse();
+  const currentPeriodDescriptor = game.periodDescriptor || landing?.periodDescriptor || null;
 
   return {
     periodScores: periodScores.rows.length ? periodScores : null,
@@ -124,7 +127,12 @@ async function fetchGameDetails(game) {
     context: {
       isLive: game.gameState === "LIVE" || game.gameState === "CRIT",
       isFinal: isFinal(game),
-      label: game.seriesGameNumber ? `Match ${game.seriesGameNumber}` : "Match"
+      label: game.seriesGameNumber ? `Match ${game.seriesGameNumber}` : "Match",
+      currentPeriod: currentPeriodDescriptor ? {
+        number: currentPeriodDescriptor.number ?? null,
+        type: currentPeriodDescriptor.periodType ?? null,
+        label: periodLabel(currentPeriodDescriptor)
+      } : null
     }
   };
 }
