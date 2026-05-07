@@ -242,10 +242,7 @@
         <div class="notes-copy">
           <p class="eyebrow">Carnet de match</p>
           <h2 id="notes-title">Garde tes observations pendant la série.</h2>
-          <p>
-            Tes notes restent dans ce navigateur. Pratique pour suivre les trios,
-            les unités spéciales ou les moments qui changent le ton du match.
-          </p>
+          <p class="notes-tagline">Tes notes restent dans ce navigateur, par match.</p>
           <p class="notes-meta" id="notesMeta" aria-live="polite">0 note</p>
         </div>
         <form class="note-composer" id="noteForm" novalidate>
@@ -254,6 +251,7 @@
             <input id="noteInput" type="text" placeholder="Ex.: surveiller le jeu de puissance en 1re période" autocomplete="off" maxlength="240">
             <button type="submit">Ajouter</button>
           </div>
+          <div class="note-suggestions" id="noteSuggestions" aria-label="Idées de notes" hidden></div>
           <div class="notes-list" id="notesList" aria-live="polite"></div>
           <div class="notes-actions">
             <button type="button" id="copyNotes" class="ghost-btn" data-disabled-when-empty>Copier toutes les notes</button>
