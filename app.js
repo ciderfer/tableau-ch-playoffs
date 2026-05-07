@@ -122,6 +122,7 @@ const els = {
   clearNotes: $("#clearNotes"),
   themeToggle: $("#themeToggle"),
   themeLabel: document.querySelector("#themeToggle .theme-label"),
+  alertsToggle: $("#alertsToggle"),
   navToggle: $("#navToggle"),
   primaryNav: $("#primaryNav"),
   dataStatus: $("#dataStatus"),
@@ -166,6 +167,7 @@ const els = {
 
 const STORAGE_KEY_NOTES = "tableau-ch-notes";
 const STORAGE_KEY_THEME = "tableau-ch-theme";
+const STORAGE_KEY_ALERTS = "tableau-ch-alerts";
 const POLL_INTERVAL_MS = 60_000;
 const MAX_NOTES = 50;
 
@@ -411,8 +413,9 @@ function renderAppData(data) {
   els.opponentLogo.src = data.opponentLogo || fallbackData.opponentLogo;
 
   const status = data.gameStatus || fallbackData.gameStatus;
+  const previousStatus = lastStatus;
   lastStatus = status;
-  renderGameStatus(status);
+  renderGameStatus(status, data.recentGoals, previousStatus);
   renderTeamStats(data.teamStats || fallbackData.teamStats);
   renderLeaders(data.leaders || fallbackData.leaders);
   renderLineups(data.lineups || fallbackData.lineups);
@@ -422,9 +425,9 @@ function renderAppData(data) {
   els.scoreMeta?.classList.toggle("is-live", Boolean(status.isLive));
 }
 
-function renderGameStatus(status) {
-  const prevAway = lastStatus?.awayScore;
-  const prevHome = lastStatus?.homeScore;
+function renderGameStatus(status, recentGoals, previousStatus) {
+  const prevAway = previousStatus?.awayScore;
+  const prevHome = previousStatus?.homeScore;
 
   els.awayCode.textContent = status.awayCode;
   els.homeCode.textContent = status.homeCode;
@@ -434,12 +437,14 @@ function renderGameStatus(status) {
   els.gameClock.textContent = status.detail;
   els.liveScoreCard.classList.toggle("is-live", Boolean(status.isLive));
 
-  if (Number.isInteger(prevAway) && status.awayScore > prevAway) {
-    flashScore(els.awayScore);
-  }
-  if (Number.isInteger(prevHome) && status.homeScore > prevHome) {
-    flashScore(els.homeScore);
-  }
+  const awayScored = Number.isInteger(prevAway) && status.awayScore > prevAway;
+  const homeScored = Number.isInteger(prevHome) && status.homeScore > prevHome;
+  const mtlIsAway = status.awayCode === "MTL";
+  const mtlScored = (mtlIsAway && awayScored) || (!mtlIsAway && homeScored);
+
+  if (awayScored) flashScore(els.awayScore);
+  if (homeScored) flashScore(els.homeScore);
+  if (mtlScored) celebrateMtlGoal(recentGoals);
 
   els.miniAwayCode.textContent = status.awayCode;
   els.miniHomeCode.textContent = status.homeCode;
@@ -534,6 +539,120 @@ function flashScore(el) {
   // Force reflow so the animation can replay.
   void el.offsetWidth;
   el.classList.add("score-flash");
+}
+
+// ---------------------- Goal alerts ----------------------
+
+let audioCtx = null;
+
+function alertsEnabled() {
+  try { return localStorage.getItem(STORAGE_KEY_ALERTS) === "1"; } catch { return false; }
+}
+
+function setAlertsState(enabled, { blocked = false } = {}) {
+  try { localStorage.setItem(STORAGE_KEY_ALERTS, enabled ? "1" : "0"); } catch {}
+  if (!els.alertsToggle) return;
+  els.alertsToggle.setAttribute("aria-pressed", String(enabled));
+  els.alertsToggle.classList.toggle("is-blocked", blocked);
+  if (blocked) {
+    els.alertsToggle.title = "Notifications bloquées dans le navigateur — débloque-les pour activer les alertes.";
+  } else {
+    els.alertsToggle.title = enabled
+      ? "Alertes actives : son, vibration et notif quand le CH marque."
+      : "Active les alertes sonores quand le CH marque.";
+  }
+}
+
+async function toggleAlerts() {
+  if (alertsEnabled()) {
+    setAlertsState(false);
+    return;
+  }
+
+  if (!("Notification" in window)) {
+    setAlertsState(true);
+    return;
+  }
+
+  if (Notification.permission === "denied") {
+    setAlertsState(false, { blocked: true });
+    return;
+  }
+
+  if (Notification.permission !== "granted") {
+    let result;
+    try { result = await Notification.requestPermission(); } catch { result = "default"; }
+    if (result !== "granted") {
+      setAlertsState(false, { blocked: result === "denied" });
+      return;
+    }
+  }
+
+  setAlertsState(true);
+  // Keep updates flowing in background so we catch goals while tab is hidden.
+  startPolling();
+}
+
+function celebrateMtlGoal(recentGoals) {
+  if (!alertsEnabled()) return;
+
+  const latest = Array.isArray(recentGoals) ? recentGoals.find((goal) => goal.team === "MTL") : null;
+  const body = latest
+    ? `${latest.scorer} · ${latest.period} ${latest.time}`
+    : "Les Canadiens viennent de marquer.";
+
+  if ("Notification" in window && Notification.permission === "granted") {
+    try {
+      const note = new Notification("BUT du CH", { body, tag: "ch-goal", renotify: true });
+      setTimeout(() => { try { note.close(); } catch {} }, 8000);
+    } catch {}
+  }
+
+  if ("vibrate" in navigator) {
+    try { navigator.vibrate([180, 80, 220, 80, 600]); } catch {}
+  }
+
+  playGoalHorn();
+}
+
+function playGoalHorn() {
+  try {
+    if (!audioCtx) {
+      const Ctor = window.AudioContext || window.webkitAudioContext;
+      if (!Ctor) return;
+      audioCtx = new Ctor();
+    }
+    if (audioCtx.state === "suspended") {
+      audioCtx.resume();
+    }
+    const ctx = audioCtx;
+    const master = ctx.createGain();
+    master.gain.value = 0.25;
+    master.connect(ctx.destination);
+
+    const playNote = (freq, start, dur) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sawtooth";
+      osc.frequency.value = freq;
+      const t0 = ctx.currentTime + start;
+      gain.gain.setValueAtTime(0, t0);
+      gain.gain.linearRampToValueAtTime(1, t0 + 0.06);
+      gain.gain.linearRampToValueAtTime(0.85, t0 + dur - 0.1);
+      gain.gain.linearRampToValueAtTime(0, t0 + dur);
+      osc.connect(gain);
+      gain.connect(master);
+      osc.start(t0);
+      osc.stop(t0 + dur);
+    };
+
+    // Chord that approximates a goal horn: low rumble + harmonic
+    playNote(155, 0, 0.55);
+    playNote(207, 0, 0.55);
+    playNote(155, 0.65, 1.4);
+    playNote(207, 0.65, 1.4);
+    playNote(311, 0.65, 1.4);
+  } catch {}
 }
 
 function renderTeamStats(teams) {
@@ -810,7 +929,7 @@ function stopPolling() {
 
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
-    stopPolling();
+    if (!alertsEnabled()) stopPolling();
   } else {
     startPolling();
   }
@@ -904,8 +1023,20 @@ function setupTheme() {
   }
 }
 
+function setupAlerts() {
+  if (!els.alertsToggle) return;
+  // Restore previous state silently. We do NOT re-request permission on load
+  // (only when the user clicks), and we treat a denied permission as off.
+  const saved = alertsEnabled();
+  const granted = !("Notification" in window) || Notification.permission === "granted";
+  const blocked = "Notification" in window && Notification.permission === "denied";
+  setAlertsState(saved && granted, { blocked });
+  els.alertsToggle.addEventListener("click", toggleAlerts);
+}
+
 function init() {
   setupTheme();
+  setupAlerts();
   setupForms();
   setupNav();
   setupMiniScore();
