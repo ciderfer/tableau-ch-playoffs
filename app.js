@@ -484,6 +484,56 @@ function renderGoalFeed(goals, context) {
     return;
   }
 
+  const hasPeriodInfo = goals.some((g) => Number.isInteger(g.periodNumber));
+  const goalPeriods = hasPeriodInfo
+    ? [...new Set(goals.map((g) => g.periodNumber).filter(Number.isInteger))]
+    : [];
+
+  let displayGoals = goals;
+  let periodLabelText = "";
+
+  if (hasPeriodInfo && context && goalPeriods.length) {
+    const maxGoalPeriod = Math.max(...goalPeriods);
+    const live = Boolean(context.isLive);
+    const final = Boolean(context.isFinal);
+
+    let target = live && Number.isInteger(context.currentPeriod?.number)
+      ? context.currentPeriod.number
+      : maxGoalPeriod;
+
+    let filtered = goals.filter((g) => g.periodNumber === target);
+    if (!filtered.length && target > 1) {
+      target = target - 1;
+      filtered = goals.filter((g) => g.periodNumber === target);
+    }
+
+    if (!filtered.length) {
+      els.goalFeed.hidden = true;
+      return;
+    }
+
+    displayGoals = filtered;
+    periodLabelText = filtered[0]?.period
+      || (live && context.currentPeriod?.label)
+      || (final && `P${target}`)
+      || "";
+  } else if (!hasPeriodInfo) {
+    // Legacy payload without periodNumber: keep the previous "last 3" behaviour.
+    displayGoals = goals.slice(0, 3);
+  }
+
+  if (!displayGoals.length) {
+    els.goalFeed.hidden = true;
+    return;
+  }
+
+  const goalsTitle = document.getElementById("goals-title");
+  if (periodLabelText && goalsTitle) {
+    goalsTitle.textContent = `Buts en ${periodLabelText}`;
+  } else if (goalsTitle) {
+    goalsTitle.textContent = "3 derniers buts";
+  }
+
   if (context?.isLive) {
     els.goalFeedEyebrow.textContent = "En direct";
     els.goalFeedStatus.textContent = "En direct";
@@ -499,7 +549,7 @@ function renderGoalFeed(goals, context) {
   const mtlCode = "MTL";
   const oppCode = mtlIsAway ? (lastStatus?.homeCode || "") : (lastStatus?.awayCode || "");
 
-  els.goalList.innerHTML = goals.map((goal) => {
+  els.goalList.innerHTML = displayGoals.map((goal) => {
     const strength = (goal.strength || "EV").toUpperCase();
     const tagClass = strength === "PP" ? "is-pp" : strength === "SH" ? "is-sh" : strength === "EN" ? "is-en" : "";
     const isMtl = goal.team === "MTL";
