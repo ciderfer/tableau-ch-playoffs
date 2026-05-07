@@ -145,7 +145,13 @@ const els = {
   goalFeedEyebrow: $("#goalFeedEyebrow"),
   goalFeedStatus: $("#goalFeedStatus"),
   bracketSection: $("#bracket"),
-  bracketRounds: $("#bracketRounds")
+  bracketRounds: $("#bracketRounds"),
+  portraitSection: $("#portrait"),
+  portraitGrid: $("#portraitGrid"),
+  portraitOpponent: $("#portraitOpponent"),
+  portraitStreaks: $("#portraitStreaks"),
+  portraitStreakMtl: $("#portraitStreakMtl"),
+  portraitStreakOpp: $("#portraitStreakOpp")
 };
 
 const STORAGE_KEY_NOTES = "tableau-ch-notes";
@@ -426,6 +432,7 @@ function renderAppData(data) {
   renderLineupUpdated(data.lastUpdated);
   renderPeriodScores(data.periodScores);
   renderStrengthState(data.focusContext?.strengthState);
+  renderPortrait(data.portrait);
   renderBracket(data.bracket);
   renderGoalFeed(data.recentGoals, data.focusContext);
   updateCountdown(status);
@@ -530,6 +537,87 @@ function renderStrengthState(state) {
       : `${state.advantageTeam} en avantage`;
 
   els.strengthBar.hidden = false;
+}
+
+function renderPortrait(portrait) {
+  if (!els.portraitSection || !els.portraitGrid) return;
+
+  if (!portrait || !Array.isArray(portrait.cards) || !portrait.cards.length) {
+    els.portraitSection.hidden = true;
+    return;
+  }
+
+  const oppCode = portrait.opponentCode || "—";
+  if (els.portraitOpponent) {
+    els.portraitOpponent.textContent = `vs ${oppCode}`;
+  }
+
+  // Streaks
+  if (portrait.mtlStreak || portrait.opponentStreak) {
+    els.portraitStreaks.hidden = false;
+    if (els.portraitStreakMtl) {
+      const mtlStreakClass = streakKlass(portrait.mtlStreak);
+      els.portraitStreakMtl.className = `portrait-streak${mtlStreakClass ? ` ${mtlStreakClass}` : ""}`;
+      els.portraitStreakMtl.textContent = portrait.mtlStreak ? `MTL · ${portrait.mtlStreak}` : "";
+      els.portraitStreakMtl.hidden = !portrait.mtlStreak;
+    }
+    if (els.portraitStreakOpp) {
+      const oppStreakClass = streakKlass(portrait.opponentStreak);
+      els.portraitStreakOpp.className = `portrait-streak portrait-streak-opp${oppStreakClass ? ` ${oppStreakClass}` : ""}`;
+      els.portraitStreakOpp.textContent = portrait.opponentStreak ? `${oppCode} · ${portrait.opponentStreak}` : "";
+      els.portraitStreakOpp.hidden = !portrait.opponentStreak;
+    }
+  } else {
+    els.portraitStreaks.hidden = true;
+  }
+
+  els.portraitGrid.innerHTML = portrait.cards.map((card) => renderPortraitCard(card, oppCode)).join("");
+  els.portraitSection.hidden = false;
+}
+
+function renderPortraitCard(card, oppCode) {
+  const mtlScore = clamp01(card.mtl?.score);
+  const oppScore = clamp01(card.opp?.score);
+  const mtlBetter = card.higherIsBetter ? mtlScore > oppScore : mtlScore < oppScore;
+  const oppBetter = card.higherIsBetter ? oppScore > mtlScore : oppScore < mtlScore;
+  const mtlBarPct = Math.round(mtlScore * 100);
+  const oppBarPct = Math.round(oppScore * 100);
+
+  return `
+    <article class="portrait-card">
+      <span class="portrait-card-label">${escapeHtml(card.label || "")}</span>
+      <div class="portrait-row${mtlBetter ? " is-better" : ""}" data-team="mtl">
+        <span class="portrait-row-code">MTL</span>
+        <div class="portrait-bar" aria-hidden="true"><span style="width:${mtlBarPct}%"></span></div>
+        <div>
+          <strong class="portrait-primary">${escapeHtml(card.mtl?.primary || "—")}</strong>
+          <small class="portrait-secondary">${escapeHtml(card.mtl?.secondary || "")}</small>
+        </div>
+      </div>
+      <div class="portrait-row${oppBetter ? " is-better" : ""}" data-team="opp">
+        <span class="portrait-row-code">${escapeHtml(oppCode)}</span>
+        <div class="portrait-bar" aria-hidden="true"><span style="width:${oppBarPct}%"></span></div>
+        <div>
+          <strong class="portrait-primary">${escapeHtml(card.opp?.primary || "—")}</strong>
+          <small class="portrait-secondary">${escapeHtml(card.opp?.secondary || "")}</small>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function clamp01(value) {
+  if (!Number.isFinite(value)) return 0;
+  if (value < 0) return 0;
+  if (value > 1) return 1;
+  return value;
+}
+
+function streakKlass(label) {
+  if (!label) return "";
+  if (/victoires/.test(label)) return "is-hot";
+  if (/défaites/.test(label)) return "is-cold";
+  return "";
 }
 
 function renderBracket(bracket) {
@@ -1194,7 +1282,7 @@ function setupNav() {
     }
   });
 
-  const sections = ["calendrier", "bracket", "stats", "notes"]
+  const sections = ["calendrier", "portrait", "bracket", "stats", "notes"]
     .map((id) => document.getElementById(id))
     .filter(Boolean);
   const links = new Map(

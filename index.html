@@ -50,6 +50,7 @@
 
         <div class="nav-actions" id="primaryNav" data-nav>
           <a href="#calendrier" data-spy="calendrier">Calendrier</a>
+          <a href="#portrait" data-spy="portrait">Portrait</a>
           <a href="#bracket" data-spy="bracket">Bracket</a>
           <a href="#stats" data-spy="stats">Stats</a>
           <a href="#notes" data-spy="notes">Notes</a>
@@ -149,6 +150,21 @@
           <h2 id="calendrier-title">Route de la ronde 2</h2>
         </div>
         <div class="schedule" id="scheduleList" aria-live="polite"></div>
+      </section>
+
+      <section id="portrait" class="portrait-panel" aria-labelledby="portrait-title" hidden>
+        <div class="panel-title">
+          <div>
+            <p class="eyebrow">Portrait</p>
+            <h2 id="portrait-title">MTL <span id="portraitOpponent">vs adversaire</span></h2>
+          </div>
+          <span class="status-pill" id="portraitStatus">Saison régulière</span>
+        </div>
+        <div class="portrait-streaks" id="portraitStreaks" hidden>
+          <span class="portrait-streak" id="portraitStreakMtl"></span>
+          <span class="portrait-streak portrait-streak-opp" id="portraitStreakOpp"></span>
+        </div>
+        <div class="portrait-grid" id="portraitGrid"></div>
       </section>
 
       <section id="bracket" class="bracket-panel" aria-labelledby="bracket-title" hidden>

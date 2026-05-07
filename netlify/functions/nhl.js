@@ -3,6 +3,7 @@ const { createHash } = require("crypto");
 const NHL_SCHEDULE_URL = "https://api-web.nhle.com/v1/club-schedule-season/MTL/now";
 const NHL_STANDINGS_URL = "https://api-web.nhle.com/v1/standings/now";
 const NHL_BASE_URL = "https://api-web.nhle.com/v1";
+const NHL_STATS_BASE_URL = "https://api.nhle.com/stats/rest/en";
 const NHL_LINEUPS_URL = "https://www.nhl.com/news/nhl-lineup-projections-2025-26-season";
 const CACHE_CONTROL = "public, max-age=15, stale-while-revalidate=60";
 
@@ -82,10 +83,20 @@ async function buildPayload(schedule, standings) {
   const opponent = findStanding(standings, opponentCode);
   const focusGame = pickFocusGame(games);
   const playoffYear = currentPlayoffYear();
-  const [focusDetails, bracket] = await Promise.all([
+  const seasonId = schedule?.currentSeason || schedule?.previousSeason || 20252026;
+  const [focusDetails, bracket, specialTeamsByCode] = await Promise.all([
     focusGame ? fetchGameDetails(focusGame).catch(() => null) : Promise.resolve(null),
-    fetchPlayoffBracket(playoffYear).catch(() => null)
+    fetchPlayoffBracket(playoffYear).catch(() => null),
+    fetchSpecialTeams(seasonId).catch(() => null)
   ]);
+
+  const portrait = buildPortrait({
+    mtlStanding: mtl,
+    opponentStanding: opponent,
+    opponentCode,
+    rawGames,
+    specialTeamsByName: specialTeamsByCode
+  });
 
   return enrichPayload({
     source: "live",
@@ -102,8 +113,159 @@ async function buildPayload(schedule, standings) {
     periodScores: focusDetails?.periodScores || null,
     recentGoals: focusDetails?.recentGoals || null,
     focusContext: focusDetails?.context || null,
-    bracket
+    bracket,
+    portrait
   }, mtl, opponent, opponentCode);
+}
+
+async function fetchSpecialTeams(seasonId) {
+  const cayenne = `seasonId=${seasonId} and gameTypeId=2`;
+  const [pp, pk] = await Promise.all([
+    fetchJson(`${NHL_STATS_BASE_URL}/team/powerplay?cayenneExp=${encodeURIComponent(cayenne)}`),
+    fetchJson(`${NHL_STATS_BASE_URL}/team/penaltykill?cayenneExp=${encodeURIComponent(cayenne)}`)
+  ]);
+  // Standings does not expose teamId, so we key by teamFullName which both
+  // standings (teamName.default) and the stats API (teamFullName) share.
+  const byName = new Map();
+  for (const row of (pp?.data || [])) {
+    if (!row?.teamFullName) continue;
+    byName.set(row.teamFullName, { ...byName.get(row.teamFullName), pp: row.powerPlayPct });
+  }
+  for (const row of (pk?.data || [])) {
+    if (!row?.teamFullName) continue;
+    byName.set(row.teamFullName, { ...byName.get(row.teamFullName), pk: row.penaltyKillPct });
+  }
+  return byName;
+}
+
+function buildPortrait({ mtlStanding, opponentStanding, opponentCode, rawGames, specialTeamsByName }) {
+  if (!mtlStanding && !opponentStanding) return null;
+
+  const cards = [];
+
+  // L10 record + goal differential
+  if (mtlStanding && opponentStanding) {
+    cards.push({
+      key: "l10",
+      label: "10 derniers matchs",
+      mtl: {
+        primary: `${mtlStanding.l10Wins ?? 0}-${mtlStanding.l10Losses ?? 0}-${mtlStanding.l10OtLosses ?? 0}`,
+        secondary: `Diff. buts ${formatSignedInt(mtlStanding.l10GoalDifferential ?? 0)}`,
+        score: (mtlStanding.l10Points ?? 0) / Math.max(1, (mtlStanding.l10GamesPlayed ?? 10) * 2)
+      },
+      opp: {
+        primary: `${opponentStanding.l10Wins ?? 0}-${opponentStanding.l10Losses ?? 0}-${opponentStanding.l10OtLosses ?? 0}`,
+        secondary: `Diff. buts ${formatSignedInt(opponentStanding.l10GoalDifferential ?? 0)}`,
+        score: (opponentStanding.l10Points ?? 0) / Math.max(1, (opponentStanding.l10GamesPlayed ?? 10) * 2)
+      },
+      higherIsBetter: true
+    });
+  }
+
+  // Power play %
+  const mtlSt = specialTeamsByName?.get(mtlStanding?.teamName?.default);
+  const oppSt = specialTeamsByName?.get(opponentStanding?.teamName?.default);
+  if (Number.isFinite(mtlSt?.pp) && Number.isFinite(oppSt?.pp)) {
+    cards.push({
+      key: "pp",
+      label: "Avantage numérique",
+      mtl: { primary: formatTeamPct(mtlSt.pp), secondary: "Saison régulière", score: mtlSt.pp },
+      opp: { primary: formatTeamPct(oppSt.pp), secondary: "Saison régulière", score: oppSt.pp },
+      higherIsBetter: true
+    });
+  }
+
+  // Penalty kill %
+  if (Number.isFinite(mtlSt?.pk) && Number.isFinite(oppSt?.pk)) {
+    cards.push({
+      key: "pk",
+      label: "Désavantage numérique",
+      mtl: { primary: formatTeamPct(mtlSt.pk), secondary: "Saison régulière", score: mtlSt.pk },
+      opp: { primary: formatTeamPct(oppSt.pk), secondary: "Saison régulière", score: oppSt.pk },
+      higherIsBetter: true
+    });
+  }
+
+  // Head-to-head regular season
+  const h2h = computeH2H(rawGames, "MTL", opponentCode);
+  if (h2h && h2h.totalGames > 0) {
+    cards.push({
+      key: "h2h",
+      label: `Saison rég. vs ${opponentCode}`,
+      mtl: {
+        primary: `${h2h.mtlWins}-${h2h.oppWins}`,
+        secondary: `Buts ${h2h.mtlGoals}-${h2h.oppGoals}`,
+        score: h2h.totalGames > 0 ? h2h.mtlWins / h2h.totalGames : 0.5
+      },
+      opp: {
+        primary: `${h2h.oppWins}-${h2h.mtlWins}`,
+        secondary: `Buts ${h2h.oppGoals}-${h2h.mtlGoals}`,
+        score: h2h.totalGames > 0 ? h2h.oppWins / h2h.totalGames : 0.5
+      },
+      higherIsBetter: true
+    });
+  }
+
+  if (!cards.length) return null;
+
+  return {
+    cards,
+    opponentCode,
+    mtlStreak: streakLabel(mtlStanding),
+    opponentStreak: streakLabel(opponentStanding)
+  };
+}
+
+function computeH2H(rawGames, teamCode, opponentCode) {
+  if (!Array.isArray(rawGames) || !opponentCode) return null;
+  const regularSeasonGames = rawGames.filter((game) => {
+    if (game.gameType !== 2) return false; // 2 = regular season
+    const away = game.awayTeam?.abbrev;
+    const home = game.homeTeam?.abbrev;
+    return (away === teamCode && home === opponentCode) || (home === teamCode && away === opponentCode);
+  });
+
+  let mtlWins = 0;
+  let oppWins = 0;
+  let mtlGoals = 0;
+  let oppGoals = 0;
+  let totalGames = 0;
+
+  for (const game of regularSeasonGames) {
+    if (!isFinal(game)) continue;
+    const away = game.awayTeam || {};
+    const home = game.homeTeam || {};
+    if (!Number.isInteger(away.score) || !Number.isInteger(home.score)) continue;
+
+    totalGames += 1;
+    const teamIsAway = away.abbrev === teamCode;
+    const teamScore = teamIsAway ? away.score : home.score;
+    const oppScore = teamIsAway ? home.score : away.score;
+    mtlGoals += teamScore;
+    oppGoals += oppScore;
+    if (teamScore > oppScore) mtlWins += 1;
+    else oppWins += 1;
+  }
+
+  return { mtlWins, oppWins, mtlGoals, oppGoals, totalGames };
+}
+
+function streakLabel(standing) {
+  if (!standing?.streakCode || !Number.isFinite(standing.streakCount)) return null;
+  const code = standing.streakCode;
+  const count = standing.streakCount;
+  const labels = { W: "victoires", L: "défaites", OT: "défaites en prolongation" };
+  return `${count} ${labels[code] || code.toLowerCase()}`;
+}
+
+function formatTeamPct(value) {
+  if (!Number.isFinite(value)) return "—";
+  return `${(value * 100).toFixed(1)}%`;
+}
+
+function formatSignedInt(value) {
+  if (!Number.isFinite(value)) return "—";
+  return value > 0 ? `+${value}` : String(value);
 }
 
 function currentPlayoffYear() {
