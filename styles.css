@@ -1620,6 +1620,14 @@ main {
   display: none;
 }
 
+.lineup-note {
+  max-width: 640px;
+  margin: -4px 0 14px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
 .line-block {
   display: grid;
   gap: 8px;
