@@ -481,7 +481,7 @@ function renderGoalFeed(goals, context) {
 
   if (context?.isLive) {
     els.goalFeedEyebrow.textContent = "En direct";
-    els.goalFeedStatus.textContent = "Live";
+    els.goalFeedStatus.textContent = "En direct";
   } else if (context?.isFinal) {
     els.goalFeedEyebrow.textContent = "Match terminé";
     els.goalFeedStatus.textContent = context.label || "Final";
@@ -490,13 +490,22 @@ function renderGoalFeed(goals, context) {
     els.goalFeedStatus.textContent = "Récap";
   }
 
+  const mtlIsAway = lastStatus?.awayCode === "MTL";
+  const mtlCode = "MTL";
+  const oppCode = mtlIsAway ? (lastStatus?.homeCode || "") : (lastStatus?.awayCode || "");
+
   els.goalList.innerHTML = goals.map((goal) => {
     const strength = (goal.strength || "EV").toUpperCase();
     const tagClass = strength === "PP" ? "is-pp" : strength === "SH" ? "is-sh" : strength === "EN" ? "is-en" : "";
     const isMtl = goal.team === "MTL";
-    const score = Number.isInteger(goal.awayScore) && Number.isInteger(goal.homeScore)
-      ? `${goal.awayScore}-${goal.homeScore}`
-      : "";
+    let score = "";
+    if (Number.isInteger(goal.awayScore) && Number.isInteger(goal.homeScore)) {
+      const mtlScore = mtlIsAway ? goal.awayScore : goal.homeScore;
+      const oppScore = mtlIsAway ? goal.homeScore : goal.awayScore;
+      score = oppCode
+        ? `${mtlCode} ${mtlScore} — ${oppCode} ${oppScore}`
+        : `${goal.awayScore}-${goal.homeScore}`;
+    }
     const assists = goal.assists?.length
       ? `Aides: ${goal.assists.join(", ")}`
       : "Sans aide";
