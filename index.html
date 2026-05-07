@@ -47,6 +47,7 @@
 
         <div class="nav-actions" id="primaryNav" data-nav>
           <a href="#calendrier" data-spy="calendrier">Calendrier</a>
+          <a href="#bracket" data-spy="bracket">Bracket</a>
           <a href="#stats" data-spy="stats">Stats</a>
           <a href="#notes" data-spy="notes">Notes</a>
           <button class="theme-action" id="alertsToggle" type="button" aria-pressed="false" title="Alertes sonores quand le CH marque">
@@ -145,6 +146,17 @@
           <h2 id="calendrier-title">Route de la ronde 2</h2>
         </div>
         <div class="schedule" id="scheduleList" aria-live="polite"></div>
+      </section>
+
+      <section id="bracket" class="bracket-panel" aria-labelledby="bracket-title" hidden>
+        <div class="panel-title">
+          <div>
+            <p class="eyebrow">Parcours du CH</p>
+            <h2 id="bracket-title">Route vers la Coupe</h2>
+          </div>
+          <span class="status-pill" id="bracketStatus">Bracket NHL</span>
+        </div>
+        <ol class="bracket-rounds" id="bracketRounds"></ol>
       </section>
 
       <section id="goals" class="goal-feed" aria-labelledby="goals-title" hidden>

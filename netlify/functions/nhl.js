@@ -81,7 +81,11 @@ async function buildPayload(schedule, standings) {
   const opponentCode = nextGame ? opponentFor(nextGame, "MTL") : "BUF";
   const opponent = findStanding(standings, opponentCode);
   const focusGame = pickFocusGame(games);
-  const focusDetails = focusGame ? await fetchGameDetails(focusGame).catch(() => null) : null;
+  const playoffYear = currentPlayoffYear();
+  const [focusDetails, bracket] = await Promise.all([
+    focusGame ? fetchGameDetails(focusGame).catch(() => null) : Promise.resolve(null),
+    fetchPlayoffBracket(playoffYear).catch(() => null)
+  ]);
 
   return enrichPayload({
     source: "live",
@@ -97,8 +101,177 @@ async function buildPayload(schedule, standings) {
     games: games.map(toScheduleRow),
     periodScores: focusDetails?.periodScores || null,
     recentGoals: focusDetails?.recentGoals || null,
-    focusContext: focusDetails?.context || null
+    focusContext: focusDetails?.context || null,
+    bracket
   }, mtl, opponent, opponentCode);
+}
+
+function currentPlayoffYear() {
+  const now = new Date();
+  // Playoffs run April–June each year. Before April we point at the previous run.
+  return now.getUTCMonth() >= 3 ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
+}
+
+async function fetchPlayoffBracket(year) {
+  const data = await fetchJson(`${NHL_BASE_URL}/playoff-bracket/${year}`);
+  return buildBracket(data);
+}
+
+const BRACKET_FEEDERS = {
+  I: ["A", "B"],
+  J: ["C", "D"],
+  K: ["E", "F"],
+  L: ["G", "H"],
+  M: ["I", "J"],
+  N: ["K", "L"],
+  O: ["M", "N"]
+};
+
+function buildBracket(raw) {
+  if (!raw || !Array.isArray(raw.series)) return null;
+  const byLetter = Object.fromEntries(raw.series.map((s) => [s.seriesLetter, s]));
+
+  const r1Letters = ["A", "B", "C", "D", "E", "F", "G", "H"];
+  const mtlR1Letter = r1Letters.find((letter) => isMtlInSeries(byLetter[letter]));
+  if (!mtlR1Letter) return null;
+
+  const nextLetter = {};
+  for (const [next, [a, b]] of Object.entries(BRACKET_FEEDERS)) {
+    nextLetter[a] = next;
+    nextLetter[b] = next;
+  }
+
+  const path = [mtlR1Letter];
+  let cur = mtlR1Letter;
+  while (nextLetter[cur]) {
+    cur = nextLetter[cur];
+    path.push(cur);
+  }
+  const pathSet = new Set(path);
+
+  let mtlEliminatedAtRound = null;
+  const rounds = path.map((letter, idx) => {
+    const round = idx + 1;
+    const series = byLetter[letter] || null;
+    const card = formatBracketRound(round, letter, series, byLetter, pathSet, mtlEliminatedAtRound !== null);
+    if (card.outcome === "lost") {
+      mtlEliminatedAtRound = round;
+    }
+    return card;
+  });
+
+  return { rounds };
+}
+
+function gatherTeamsFromBranch(letter, byLetter) {
+  const s = byLetter[letter];
+  if (!s) return [];
+  const teams = [];
+  if (s.topSeedTeam?.abbrev) teams.push(s.topSeedTeam.abbrev);
+  if (s.bottomSeedTeam?.abbrev) teams.push(s.bottomSeedTeam.abbrev);
+  if (teams.length) return teams;
+  const feeders = BRACKET_FEEDERS[letter];
+  if (!feeders) return [];
+  return feeders.flatMap((f) => gatherTeamsFromBranch(f, byLetter));
+}
+
+function formatBracketRound(round, letter, series, byLetter, pathSet, alreadyEliminated) {
+  const card = {
+    round,
+    label: roundLongLabel(round),
+    seriesLetter: letter,
+    state: "tbd",
+    outcome: null,
+    description: ""
+  };
+
+  if (alreadyEliminated) {
+    card.description = "MTL éliminé";
+    return card;
+  }
+
+  if (!series) {
+    card.description = "Série à venir";
+    return card;
+  }
+
+  const mtlInSeries = isMtlInSeries(series);
+  const totalGames = (series.topSeedWins || 0) + (series.bottomSeedWins || 0);
+  const completed = Number.isInteger(series.winningTeamId) && series.winningTeamId !== 0;
+  const inProgress = !completed && totalGames > 0;
+
+  card.state = completed ? "completed" : inProgress ? "in-progress" : "tbd";
+
+  if (mtlInSeries) {
+    const mtlIsTopSeed = series.topSeedTeam?.abbrev === "MTL";
+    const opponent = mtlIsTopSeed ? series.bottomSeedTeam : series.topSeedTeam;
+    const mtlWins = mtlIsTopSeed ? series.topSeedWins : series.bottomSeedWins;
+    const oppWins = mtlIsTopSeed ? series.bottomSeedWins : series.topSeedWins;
+    const mtlId = mtlIsTopSeed ? series.topSeedTeam?.id : series.bottomSeedTeam?.id;
+
+    card.matchup = {
+      mtlWins: mtlWins || 0,
+      oppWins: oppWins || 0,
+      opponentCode: opponent?.abbrev || "?",
+      opponentName: opponent?.commonName?.default || opponent?.name?.default || opponent?.abbrev || "?",
+      opponentLogo: opponent?.logo || ""
+    };
+
+    if (completed) {
+      card.outcome = series.winningTeamId === mtlId ? "won" : "lost";
+      card.description = card.outcome === "won"
+        ? `Série gagnée ${mtlWins}-${oppWins}`
+        : `Éliminé ${mtlWins}-${oppWins}`;
+    } else if (inProgress) {
+      const lead = (mtlWins || 0) - (oppWins || 0);
+      card.description = lead > 0
+        ? `MTL devant ${mtlWins}-${oppWins}`
+        : lead < 0
+          ? `MTL en arrière ${mtlWins}-${oppWins}`
+          : `Égalité ${mtlWins}-${oppWins}`;
+    } else {
+      card.description = "Série à venir";
+    }
+    return card;
+  }
+
+  // MTL not yet in this series — look at the OTHER branch only.
+  const otherFeeders = (BRACKET_FEEDERS[letter] || []).filter((f) => !pathSet.has(f));
+  const possibleOpponents = new Set();
+  for (const feederLetter of otherFeeders) {
+    for (const team of gatherTeamsFromBranch(feederLetter, byLetter)) {
+      possibleOpponents.add(team);
+    }
+  }
+  possibleOpponents.delete("MTL");
+
+  card.matchup = null;
+  if (possibleOpponents.size === 0) {
+    card.description = round === 4 ? "Champion de l'Ouest à déterminer" : "Adversaire à déterminer";
+  } else {
+    const list = [...possibleOpponents].slice(0, 4).join(" / ");
+    card.description = `Si MTL avance: vs ${list}`;
+  }
+  return card;
+}
+
+function isMtlInSeries(series) {
+  if (!series) return false;
+  return series.topSeedTeam?.abbrev === "MTL" || series.bottomSeedTeam?.abbrev === "MTL";
+}
+
+function roundLongLabel(round) {
+  if (round === 1) return "Ronde 1";
+  if (round === 2) return "Ronde 2";
+  if (round === 3) return "Finale d'association";
+  return "Finale de la Coupe Stanley";
+}
+
+function roundShortLabel(round) {
+  if (round === 1) return "R1";
+  if (round === 2) return "R2";
+  if (round === 3) return "finale d'association";
+  return "finale de la Coupe";
 }
 
 function pickFocusGame(games) {

@@ -143,7 +143,9 @@ const els = {
   goalFeed: $("#goals"),
   goalList: $("#goalList"),
   goalFeedEyebrow: $("#goalFeedEyebrow"),
-  goalFeedStatus: $("#goalFeedStatus")
+  goalFeedStatus: $("#goalFeedStatus"),
+  bracketSection: $("#bracket"),
+  bracketRounds: $("#bracketRounds")
 };
 
 const STORAGE_KEY_NOTES = "tableau-ch-notes";
@@ -424,6 +426,7 @@ function renderAppData(data) {
   renderLineupUpdated(data.lastUpdated);
   renderPeriodScores(data.periodScores);
   renderStrengthState(data.focusContext?.strengthState);
+  renderBracket(data.bracket);
   renderGoalFeed(data.recentGoals, data.focusContext);
   updateCountdown(status);
   els.scoreMeta?.classList.toggle("is-live", Boolean(status.isLive));
@@ -527,6 +530,58 @@ function renderStrengthState(state) {
       : `${state.advantageTeam} en avantage`;
 
   els.strengthBar.hidden = false;
+}
+
+function renderBracket(bracket) {
+  if (!els.bracketSection || !els.bracketRounds) return;
+
+  if (!bracket || !Array.isArray(bracket.rounds) || !bracket.rounds.length) {
+    els.bracketSection.hidden = true;
+    return;
+  }
+
+  const stateGlyph = (round) => {
+    if (round.outcome === "won") return "✓";
+    if (round.outcome === "lost") return "✕";
+    if (round.state === "in-progress") return "●";
+    return "○";
+  };
+
+  const stateClass = (round) => {
+    if (round.outcome === "won") return "is-won";
+    if (round.outcome === "lost") return "is-lost";
+    if (round.state === "in-progress") return "is-current";
+    return "";
+  };
+
+  els.bracketRounds.innerHTML = bracket.rounds.map((round) => {
+    const klass = stateClass(round);
+    const matchup = round.matchup
+      ? `<div class="bracket-matchup-line">
+          <span>MTL ${escapeHtml(String(round.matchup.mtlWins))}</span>
+          <span>—</span>
+          ${round.matchup.opponentLogo ? `<img src="${escapeHtml(round.matchup.opponentLogo)}" alt="" loading="lazy" decoding="async">` : ""}
+          <span>${escapeHtml(round.matchup.opponentCode)} ${escapeHtml(String(round.matchup.oppWins))}</span>
+        </div>`
+      : "";
+
+    return `
+      <li class="bracket-round ${klass}">
+        <div class="bracket-round-label">
+          <small>Ronde ${round.round}</small>
+          <strong>${escapeHtml(round.label)}</strong>
+        </div>
+        <span class="bracket-state" aria-hidden="true">${stateGlyph(round)}</span>
+        <div class="bracket-matchup">
+          ${matchup}
+          <span class="bracket-description">${escapeHtml(round.description || "")}</span>
+        </div>
+        <span class="bracket-needed">${round.matchup ? "1ère à 4 victoires" : ""}</span>
+      </li>
+    `;
+  }).join("");
+
+  els.bracketSection.hidden = false;
 }
 
 function renderGoalFeed(goals, context) {
@@ -1139,7 +1194,7 @@ function setupNav() {
     }
   });
 
-  const sections = ["calendrier", "stats", "notes"]
+  const sections = ["calendrier", "bracket", "stats", "notes"]
     .map((id) => document.getElementById(id))
     .filter(Boolean);
   const links = new Map(
