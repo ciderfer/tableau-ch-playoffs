@@ -100,11 +100,16 @@
               <strong id="homeScore">0</strong>
             </div>
           </div>
+          <div class="strength-bar" id="strengthBar" aria-live="polite" hidden>
+            <span class="strength-label" id="strengthLabel">5v5</span>
+            <span class="strength-detail" id="strengthDetail"></span>
+          </div>
           <table class="period-table" id="periodTable" aria-label="Pointage par période" hidden>
             <thead>
               <tr id="periodHeader"></tr>
             </thead>
             <tbody id="periodBody"></tbody>
+            <tbody class="shots" id="periodShotsBody" hidden></tbody>
           </table>
           <div class="matchup">
             <div class="team team-mtl">
