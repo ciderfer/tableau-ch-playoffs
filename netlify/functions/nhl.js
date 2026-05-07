@@ -1,9 +1,12 @@
+const { createHash } = require("crypto");
+
 const NHL_SCHEDULE_URL = "https://api-web.nhle.com/v1/club-schedule-season/MTL/now";
 const NHL_STANDINGS_URL = "https://api-web.nhle.com/v1/standings/now";
 const NHL_BASE_URL = "https://api-web.nhle.com/v1";
 const NHL_LINEUPS_URL = "https://www.nhl.com/news/nhl-lineup-projections-2025-26-season";
+const CACHE_CONTROL = "public, max-age=15, stale-while-revalidate=60";
 
-exports.handler = async () => {
+exports.handler = async (event) => {
   try {
     const [schedule, standings] = await Promise.all([
       fetchJson(NHL_SCHEDULE_URL),
@@ -11,14 +14,28 @@ exports.handler = async () => {
     ]);
 
     const payload = await buildPayload(schedule, standings);
+    const body = JSON.stringify(payload);
+    const etag = `"${createHash("sha256").update(body).digest("hex").slice(0, 16)}"`;
+    const requestEtag = readHeader(event, "if-none-match");
+
+    if (requestEtag && requestEtag === etag) {
+      return {
+        statusCode: 304,
+        headers: {
+          ETag: etag,
+          "Cache-Control": CACHE_CONTROL
+        }
+      };
+    }
 
     return {
       statusCode: 200,
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "public, max-age=60"
+        ETag: etag,
+        "Cache-Control": CACHE_CONTROL
       },
-      body: JSON.stringify(payload)
+      body
     };
   } catch (error) {
     return {
@@ -31,6 +48,15 @@ exports.handler = async () => {
     };
   }
 };
+
+function readHeader(event, name) {
+  const headers = event?.headers || {};
+  const lower = name.toLowerCase();
+  for (const key of Object.keys(headers)) {
+    if (key.toLowerCase() === lower) return headers[key];
+  }
+  return null;
+}
 
 async function fetchJson(url) {
   const response = await fetch(url, {

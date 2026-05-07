@@ -528,6 +528,22 @@ h2 {
   animation: pulse 1.6s ease-in-out infinite;
 }
 
+.score-meta.is-stale span {
+  color: var(--gold);
+}
+
+.score-meta.is-stale span::before {
+  animation: none;
+}
+
+.score-meta.is-broken span {
+  color: var(--red);
+}
+
+.score-meta.is-broken span::before {
+  animation: none;
+}
+
 @keyframes pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.55; transform: scale(1.15); }
