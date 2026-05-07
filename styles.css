@@ -830,6 +830,202 @@ h2 {
   font-size: 0.9rem;
 }
 
+.bracket-panel {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+  padding: 22px;
+}
+
+.bracket-panel[hidden] {
+  display: none;
+}
+
+.bracket-rounds {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bracket-round {
+  display: grid;
+  grid-template-columns: 90px 44px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  transition: border-color 0.2s var(--ease);
+}
+
+.bracket-round.is-current {
+  border-color: rgba(159, 230, 255, 0.4);
+  background: linear-gradient(135deg, rgba(159, 230, 255, 0.08), rgba(255, 255, 255, 0.05));
+}
+
+.bracket-round.is-won {
+  border-color: rgba(46, 167, 87, 0.4);
+  background: linear-gradient(135deg, rgba(46, 167, 87, 0.1), rgba(255, 255, 255, 0.04));
+}
+
+.bracket-round.is-lost {
+  border-color: rgba(215, 25, 63, 0.4);
+  background: linear-gradient(135deg, rgba(215, 25, 63, 0.1), rgba(255, 255, 255, 0.04));
+}
+
+.bracket-round-label {
+  display: grid;
+  gap: 2px;
+}
+
+.bracket-round-label small {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.bracket-round-label strong {
+  font-size: 0.95rem;
+  font-weight: 950;
+}
+
+.bracket-state {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--muted);
+  font-size: 1.05rem;
+  font-weight: 950;
+}
+
+.bracket-round.is-current .bracket-state {
+  border-color: rgba(159, 230, 255, 0.55);
+  background: rgba(159, 230, 255, 0.18);
+  color: var(--ice);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+.bracket-round.is-won .bracket-state {
+  border-color: rgba(46, 167, 87, 0.5);
+  background: rgba(46, 167, 87, 0.22);
+  color: #b9e8c4;
+}
+
+.bracket-round.is-lost .bracket-state {
+  border-color: rgba(215, 25, 63, 0.5);
+  background: rgba(215, 25, 63, 0.22);
+  color: #ffd1dc;
+}
+
+.bracket-matchup {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.bracket-matchup-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-weight: 950;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.bracket-matchup-line img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.bracket-description {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.bracket-round.is-won .bracket-description {
+  color: #b9e8c4;
+}
+
+.bracket-round.is-lost .bracket-description {
+  color: #ffd1dc;
+}
+
+.bracket-needed {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-align: right;
+}
+
+:root.ice-mode .bracket-round {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+:root.ice-mode .bracket-round.is-won {
+  background: linear-gradient(135deg, rgba(46, 130, 80, 0.16), rgba(255, 255, 255, 0.6));
+}
+
+:root.ice-mode .bracket-round.is-lost {
+  background: linear-gradient(135deg, rgba(215, 25, 63, 0.14), rgba(255, 255, 255, 0.6));
+}
+
+:root.ice-mode .bracket-round.is-won .bracket-description {
+  color: #20633c;
+}
+
+:root.ice-mode .bracket-round.is-lost .bracket-description {
+  color: #8c1230;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bracket-round.is-current .bracket-state {
+    animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .bracket-round {
+    grid-template-columns: 36px 1fr;
+    gap: 10px;
+  }
+
+  .bracket-round-label {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .bracket-state {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  .bracket-matchup {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .bracket-needed {
+    display: none;
+  }
+}
+
 .goal-feed {
   border: 1px solid var(--line);
   border-radius: 12px;
