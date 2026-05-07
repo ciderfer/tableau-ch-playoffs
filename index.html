@@ -96,6 +96,12 @@
               <strong id="homeScore">0</strong>
             </div>
           </div>
+          <table class="period-table" id="periodTable" aria-label="Pointage par période" hidden>
+            <thead>
+              <tr id="periodHeader"></tr>
+            </thead>
+            <tbody id="periodBody"></tbody>
+          </table>
           <div class="matchup">
             <div class="team team-mtl">
               <span class="team-logo team-logo-mtl">
@@ -131,6 +137,17 @@
           <h2 id="calendrier-title">Route de la ronde 2</h2>
         </div>
         <div class="schedule" id="scheduleList" aria-live="polite"></div>
+      </section>
+
+      <section id="goals" class="goal-feed" aria-labelledby="goals-title" hidden>
+        <div class="panel-title">
+          <div>
+            <p class="eyebrow" id="goalFeedEyebrow">Derniers buts</p>
+            <h2 id="goals-title">3 derniers buts</h2>
+          </div>
+          <span class="status-pill" id="goalFeedStatus">Récap</span>
+        </div>
+        <ol class="goal-list" id="goalList" aria-live="polite"></ol>
       </section>
 
       <section id="series" class="dashboard" aria-label="Portrait de la série">

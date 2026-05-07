@@ -54,6 +54,8 @@ async function buildPayload(schedule, standings) {
   const mtl = findStanding(standings, "MTL");
   const opponentCode = nextGame ? opponentFor(nextGame, "MTL") : "BUF";
   const opponent = findStanding(standings, opponentCode);
+  const focusGame = pickFocusGame(games);
+  const focusDetails = focusGame ? await fetchGameDetails(focusGame).catch(() => null) : null;
 
   return enrichPayload({
     source: "live",
@@ -66,8 +68,78 @@ async function buildPayload(schedule, standings) {
     opponentRecord: recordText(opponent),
     mtlLogo: teamLogo(nextGame, "MTL") || "https://assets.nhle.com/logos/nhl/svg/MTL_light.svg",
     opponentLogo: nextGame ? opponentLogoFor(nextGame, "MTL") : "https://assets.nhle.com/logos/nhl/svg/BUF_light.svg",
-    games: games.map(toScheduleRow)
+    games: games.map(toScheduleRow),
+    periodScores: focusDetails?.periodScores || null,
+    recentGoals: focusDetails?.recentGoals || null,
+    focusContext: focusDetails?.context || null
   }, mtl, opponent, opponentCode);
+}
+
+function pickFocusGame(games) {
+  const live = games.find((game) => game.gameState === "LIVE" || game.gameState === "CRIT");
+  if (live) return live;
+  return [...games].reverse().find(isFinal) || null;
+}
+
+async function fetchGameDetails(game) {
+  const id = game.id || game.gamePk;
+  if (!id) return null;
+
+  const landing = await fetchJson(`${NHL_BASE_URL}/gamecenter/${id}/landing`);
+  const summary = landing?.summary || {};
+  const linescore = summary.linescore || {};
+  const byPeriod = Array.isArray(linescore.byPeriod) ? linescore.byPeriod : [];
+  const periodScores = {
+    awayCode: landing?.awayTeam?.abbrev || game.awayTeam?.abbrev || "VIS",
+    homeCode: landing?.homeTeam?.abbrev || game.homeTeam?.abbrev || "DOM",
+    rows: byPeriod.map((row) => ({
+      label: periodLabel(row.periodDescriptor),
+      away: Number.isInteger(row.away) ? row.away : 0,
+      home: Number.isInteger(row.home) ? row.home : 0
+    })),
+    totalAway: linescore.totals?.away ?? landing?.awayTeam?.score ?? 0,
+    totalHome: linescore.totals?.home ?? landing?.homeTeam?.score ?? 0
+  };
+
+  const scoring = Array.isArray(summary.scoring) ? summary.scoring : [];
+  const flatGoals = scoring.flatMap((period) => {
+    const goals = Array.isArray(period.goals) ? period.goals : [];
+    return goals.map((goal) => ({
+      period: periodLabel(period.periodDescriptor),
+      time: goal.timeInPeriod || "",
+      team: goal.teamAbbrev?.default || "",
+      scorer: [goal.firstName?.default, goal.lastName?.default].filter(Boolean).join(" "),
+      assists: (goal.assists || []).map((assist) => [assist.firstName?.default, assist.lastName?.default].filter(Boolean).join(" ")).filter(Boolean),
+      strength: (goal.strength || "ev").toUpperCase(),
+      awayScore: Number.isInteger(goal.awayScore) ? goal.awayScore : null,
+      homeScore: Number.isInteger(goal.homeScore) ? goal.homeScore : null
+    }));
+  });
+
+  const recentGoals = flatGoals.slice(-3).reverse();
+
+  return {
+    periodScores: periodScores.rows.length ? periodScores : null,
+    recentGoals: recentGoals.length ? recentGoals : null,
+    context: {
+      isLive: game.gameState === "LIVE" || game.gameState === "CRIT",
+      isFinal: isFinal(game),
+      label: game.seriesGameNumber ? `Match ${game.seriesGameNumber}` : "Match"
+    }
+  };
+}
+
+function periodLabel(descriptor) {
+  if (!descriptor) return "";
+  const number = descriptor.number;
+  const type = descriptor.periodType;
+  if (type === "OT") return "Pr.";
+  if (type === "SO") return "TB";
+  if (number === 1) return "1re";
+  if (number === 2) return "2e";
+  if (number === 3) return "3e";
+  if (number > 3) return `Pr.${number - 3}`;
+  return String(number || "");
 }
 
 async function enrichPayload(payload, mtlStanding, opponentStanding, opponentCode) {

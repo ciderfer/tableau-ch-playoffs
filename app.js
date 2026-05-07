@@ -154,7 +154,14 @@ const els = {
   cdDays: $("#cdDays"),
   cdHours: $("#cdHours"),
   cdMinutes: $("#cdMinutes"),
-  cdSeconds: $("#cdSeconds")
+  cdSeconds: $("#cdSeconds"),
+  periodTable: $("#periodTable"),
+  periodHeader: $("#periodHeader"),
+  periodBody: $("#periodBody"),
+  goalFeed: $("#goals"),
+  goalList: $("#goalList"),
+  goalFeedEyebrow: $("#goalFeedEyebrow"),
+  goalFeedStatus: $("#goalFeedStatus")
 };
 
 const STORAGE_KEY_NOTES = "tableau-ch-notes";
@@ -409,6 +416,8 @@ function renderAppData(data) {
   renderTeamStats(data.teamStats || fallbackData.teamStats);
   renderLeaders(data.leaders || fallbackData.leaders);
   renderLineups(data.lineups || fallbackData.lineups);
+  renderPeriodScores(data.periodScores);
+  renderGoalFeed(data.recentGoals, data.focusContext);
   updateCountdown(status);
   els.scoreMeta?.classList.toggle("is-live", Boolean(status.isLive));
 }
@@ -438,6 +447,85 @@ function renderGameStatus(status) {
   els.miniHomeScore.textContent = status.homeScore;
   els.miniState.textContent = status.isLive ? `${status.state} · ${status.detail}` : status.detail || status.state;
   els.miniScore.classList.toggle("is-live", Boolean(status.isLive));
+}
+
+function renderPeriodScores(scores) {
+  if (!scores || !Array.isArray(scores.rows) || !scores.rows.length) {
+    els.periodTable.hidden = true;
+    return;
+  }
+
+  const headerCells = ['<th scope="col">Équipe</th>']
+    .concat(scores.rows.map((row) => `<th scope="col">${escapeHtml(row.label)}</th>`))
+    .concat('<th scope="col">T</th>')
+    .join("");
+  els.periodHeader.innerHTML = headerCells;
+
+  const buildRow = (code, key, total) => {
+    const cells = scores.rows.map((row) => `<td>${escapeHtml(String(row[key]))}</td>`).join("");
+    return `<tr><th scope="row">${escapeHtml(code)}</th>${cells}<td class="is-total">${escapeHtml(String(total))}</td></tr>`;
+  };
+
+  els.periodBody.innerHTML = [
+    buildRow(scores.awayCode, "away", scores.totalAway),
+    buildRow(scores.homeCode, "home", scores.totalHome)
+  ].join("");
+  els.periodTable.hidden = false;
+}
+
+function renderGoalFeed(goals, context) {
+  if (!Array.isArray(goals) || !goals.length) {
+    els.goalFeed.hidden = true;
+    return;
+  }
+
+  if (context?.isLive) {
+    els.goalFeedEyebrow.textContent = "En direct";
+    els.goalFeedStatus.textContent = "En direct";
+  } else if (context?.isFinal) {
+    els.goalFeedEyebrow.textContent = "Match terminé";
+    els.goalFeedStatus.textContent = context.label || "Final";
+  } else {
+    els.goalFeedEyebrow.textContent = "Derniers buts";
+    els.goalFeedStatus.textContent = "Récap";
+  }
+
+  const mtlIsAway = lastStatus?.awayCode === "MTL";
+  const mtlCode = "MTL";
+  const oppCode = mtlIsAway ? (lastStatus?.homeCode || "") : (lastStatus?.awayCode || "");
+
+  els.goalList.innerHTML = goals.map((goal) => {
+    const strength = (goal.strength || "EV").toUpperCase();
+    const tagClass = strength === "PP" ? "is-pp" : strength === "SH" ? "is-sh" : strength === "EN" ? "is-en" : "";
+    const isMtl = goal.team === "MTL";
+    let score = "";
+    if (Number.isInteger(goal.awayScore) && Number.isInteger(goal.homeScore)) {
+      const mtlScore = mtlIsAway ? goal.awayScore : goal.homeScore;
+      const oppScore = mtlIsAway ? goal.homeScore : goal.awayScore;
+      score = oppCode
+        ? `${mtlCode} ${mtlScore} — ${oppCode} ${oppScore}`
+        : `${goal.awayScore}-${goal.homeScore}`;
+    }
+    const assists = goal.assists?.length
+      ? `Aides: ${goal.assists.join(", ")}`
+      : "Sans aide";
+
+    return `
+      <li class="goal-row${isMtl ? " is-mtl" : ""}">
+        <div class="goal-when">
+          <span>${escapeHtml(goal.period || "")}</span>
+          <strong>${escapeHtml(goal.time || "")}</strong>
+        </div>
+        <div class="goal-body">
+          <strong>${escapeHtml(goal.team || "")} · ${escapeHtml(goal.scorer || "")}</strong>
+          <small>${escapeHtml(assists)}${score ? ` · ${escapeHtml(score)}` : ""}</small>
+        </div>
+        <span class="goal-tag ${tagClass}">${escapeHtml(strength)}</span>
+      </li>
+    `;
+  }).join("");
+
+  els.goalFeed.hidden = false;
 }
 
 function flashScore(el) {
