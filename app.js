@@ -94,6 +94,7 @@ const els = {
   noteInput: $("#noteInput"),
   notesList: $("#notesList"),
   notesMeta: $("#notesMeta"),
+  noteSuggestions: $("#noteSuggestions"),
   copyNotes: $("#copyNotes"),
   clearNotes: $("#clearNotes"),
   themeToggle: $("#themeToggle"),
@@ -435,6 +436,7 @@ function renderAppData(data) {
   renderPortrait(data.portrait);
   renderBracket(data.bracket);
   renderGoalFeed(data.recentGoals, data.focusContext);
+  renderNoteSuggestions();
   updateCountdown(status);
   els.scoreMeta?.classList.toggle("is-live", Boolean(status.isLive));
 }
@@ -1011,7 +1013,7 @@ function renderNotes() {
   const notes = getNotes();
 
   if (!notes.length) {
-    els.notesList.innerHTML = `<div class="note-empty">Aucune note pour l’instant.</div>`;
+    els.notesList.innerHTML = `<p class="note-empty">Aucune note encore — clique une suggestion ou tape ta propre observation.</p>`;
   } else {
     els.notesList.innerHTML = notes
       .map((note, index) => `
@@ -1031,10 +1033,55 @@ function renderNotes() {
     : notes.length === 1
       ? "1 note"
       : `${notes.length} notes`;
+  els.notesMeta.classList.toggle("is-active", notes.length > 0);
 
   for (const button of document.querySelectorAll("[data-disabled-when-empty]")) {
     button.disabled = notes.length === 0;
   }
+}
+
+const DEFAULT_NOTE_SUGGESTIONS = [
+  "Bon jeu de puissance",
+  "Trio chaud à surveiller",
+  "Pénalité douteuse",
+  "Moment qui change le ton"
+];
+
+function renderNoteSuggestions() {
+  if (!els.noteSuggestions) return;
+
+  const chips = DEFAULT_NOTE_SUGGESTIONS.map((text) => ({ text, live: false }));
+
+  // If a game is currently live, prepend a contextual chip that uses the
+  // existing note prefix machinery so the user can drop a note on the
+  // current period in one click.
+  if (lastStatus?.isLive) {
+    const periodLabel = lastData?.focusContext?.currentPeriod?.label || "";
+    if (periodLabel) {
+      chips.unshift({ text: `Note sur la ${periodLabel}`, live: true });
+    } else {
+      chips.unshift({ text: "Note rapide en direct", live: true });
+    }
+  }
+
+  els.noteSuggestions.innerHTML = chips.map((chip) => `
+    <button type="button" class="note-suggestion${chip.live ? " is-live" : ""}" data-note-suggestion="${escapeHtml(chip.text)}">
+      ${escapeHtml(chip.text)}
+    </button>
+  `).join("");
+  els.noteSuggestions.hidden = false;
+}
+
+function applyNoteSuggestion(text) {
+  if (!els.noteInput || !text) return;
+  const current = els.noteInput.value.trim();
+  // Replace if empty, otherwise append with separator so quick clicks
+  // can compose multiple suggestions before hitting Ajouter.
+  els.noteInput.value = current ? `${current} · ${text}` : text;
+  els.noteInput.focus();
+  // Move cursor to end without re-selecting.
+  const end = els.noteInput.value.length;
+  els.noteInput.setSelectionRange(end, end);
 }
 
 function addNote(text) {
@@ -1336,6 +1383,14 @@ function setupForms() {
 
   els.copyNotes.addEventListener("click", copyAllNotes);
   els.clearNotes.addEventListener("click", clearAllNotes);
+
+  if (els.noteSuggestions) {
+    els.noteSuggestions.addEventListener("click", (event) => {
+      const target = event.target.closest("[data-note-suggestion]");
+      if (!target) return;
+      applyNoteSuggestion(target.dataset.noteSuggestion);
+    });
+  }
 }
 
 function setupTheme() {
