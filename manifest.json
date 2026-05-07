@@ -1,0 +1,34 @@
+{
+  "name": "Tableau CH — Séries NHL",
+  "short_name": "Tableau CH",
+  "description": "Cockpit des séries des Canadiens de Montréal: pointage, stats, alignements et carnet de match.",
+  "lang": "fr-CA",
+  "dir": "ltr",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#071019",
+  "theme_color": "#071019",
+  "categories": ["sports", "news"],
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}
