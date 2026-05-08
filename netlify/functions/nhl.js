@@ -11,7 +11,7 @@ exports.handler = async (event) => {
   try {
     const [schedule, standings] = await Promise.all([
       fetchJson(NHL_SCHEDULE_URL),
-      fetchJson(NHL_STANDINGS_URL)
+      fetchJson(NHL_STANDINGS_URL).catch(() => null)
     ]);
 
     const payload = await buildPayload(schedule, standings);
@@ -573,10 +573,10 @@ function periodLabel(descriptor) {
 
 async function enrichPayload(payload, mtlStanding, opponentStanding, opponentCode) {
   const [mtlStats, opponentStats, mtlRoster, opponentRoster, editorialLineups] = await Promise.all([
-    fetchJson(`${NHL_BASE_URL}/club-stats/MTL/now`),
-    fetchJson(`${NHL_BASE_URL}/club-stats/${opponentCode}/now`),
-    fetchJson(`${NHL_BASE_URL}/roster/MTL/current`),
-    fetchJson(`${NHL_BASE_URL}/roster/${opponentCode}/current`),
+    fetchJson(`${NHL_BASE_URL}/club-stats/MTL/now`).catch(() => null),
+    opponentCode ? fetchJson(`${NHL_BASE_URL}/club-stats/${opponentCode}/now`).catch(() => null) : Promise.resolve(null),
+    fetchJson(`${NHL_BASE_URL}/roster/MTL/current`).catch(() => null),
+    opponentCode ? fetchJson(`${NHL_BASE_URL}/roster/${opponentCode}/current`).catch(() => null) : Promise.resolve(null),
     fetchEditorialLineups(opponentStanding?.teamCommonName?.default || opponentCode, opponentCode).catch(() => null)
   ]);
 
