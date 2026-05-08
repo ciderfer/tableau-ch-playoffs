@@ -2248,7 +2248,7 @@ footer a:hover {
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 900px) {
   .nav-toggle {
     display: inline-flex;
     order: 2;
@@ -2305,7 +2305,9 @@ footer a:hover {
   .theme-action {
     justify-content: flex-start;
   }
+}
 
+@media (max-width: 720px) {
   .mini-score {
     display: flex;
   }

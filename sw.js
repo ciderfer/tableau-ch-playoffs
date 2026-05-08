@@ -12,7 +12,7 @@
  *    the browser HTTP cache and CDNs handle those better than we can.
  */
 
-const CACHE_VERSION = "tableau-ch-v3";
+const CACHE_VERSION = "tableau-ch-v4";
 const SHELL_ASSETS = [
   "./",
   "./index.html",
