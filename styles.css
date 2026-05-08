@@ -2242,3 +2242,196 @@ footer a:hover {
     background: #fff;
   }
 }
+
+/* ---------------------- TV mode ---------------------- */
+/* Triggered by body.is-tv-mode. Hides chrome, scales the
+   scoreboard to fill the viewport for a 2nd-screen "stadium"
+   feel during a live match. */
+
+.tv-exit {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
+  z-index: 200;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s var(--ease), background 0.2s var(--ease);
+}
+
+.tv-exit:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.tv-exit > span:first-child {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+body.is-tv-mode .tv-exit {
+  display: inline-flex;
+}
+
+/* Hide everything except the scoreboard. */
+body.is-tv-mode .topbar,
+body.is-tv-mode .hero-copy,
+body.is-tv-mode main,
+body.is-tv-mode footer,
+body.is-tv-mode .mini-score,
+body.is-tv-mode .ice-halo,
+body.is-tv-mode .skip-link,
+body.is-tv-mode .puck-countdown,
+body.is-tv-mode .noscript-banner {
+  display: none !important;
+}
+
+body.is-tv-mode {
+  background: var(--bg);
+}
+
+body.is-tv-mode::before {
+  display: none;
+}
+
+body.is-tv-mode .hero {
+  min-height: 100vh;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+
+body.is-tv-mode .hero-grid {
+  width: 100%;
+  max-width: none;
+  display: block;
+  padding: max(24px, env(safe-area-inset-top)) clamp(16px, 4vw, 64px) max(24px, env(safe-area-inset-bottom));
+  min-height: 0;
+}
+
+body.is-tv-mode .scoreboard {
+  width: min(96vw, 1500px);
+  max-width: none;
+  margin: 0 auto;
+  border-radius: 18px;
+}
+
+body.is-tv-mode .scoreboard-header {
+  padding: clamp(14px, 2vw, 24px) clamp(20px, 3vw, 36px);
+  font-size: clamp(0.9rem, 1.4vw, 1.2rem);
+}
+
+body.is-tv-mode .scoreboard-header strong {
+  font-size: clamp(1rem, 1.8vw, 1.5rem);
+}
+
+body.is-tv-mode .score-meta {
+  padding: clamp(12px, 1.6vw, 20px) clamp(20px, 3vw, 36px);
+  font-size: clamp(0.9rem, 1.2vw, 1.1rem);
+}
+
+body.is-tv-mode .score-meta span {
+  font-size: inherit;
+}
+
+body.is-tv-mode .live-score {
+  padding: clamp(28px, 4vw, 64px) clamp(20px, 3vw, 64px);
+  gap: clamp(16px, 2vw, 32px);
+}
+
+body.is-tv-mode .live-score strong {
+  font-size: clamp(6rem, 16vw, 14rem);
+  line-height: 1;
+}
+
+body.is-tv-mode .live-score span {
+  font-size: clamp(1.2rem, 2vw, 2rem);
+}
+
+body.is-tv-mode .game-clock {
+  min-height: 0;
+  padding: clamp(16px, 2vw, 28px) clamp(18px, 2.5vw, 36px);
+  border-radius: 14px;
+}
+
+body.is-tv-mode .game-clock strong {
+  font-size: clamp(1.6rem, 2.6vw, 2.4rem);
+}
+
+body.is-tv-mode .game-clock span {
+  font-size: clamp(0.9rem, 1.4vw, 1.2rem);
+}
+
+body.is-tv-mode .strength-bar {
+  padding: clamp(14px, 2vw, 22px) clamp(20px, 3vw, 36px);
+  font-size: clamp(1rem, 1.6vw, 1.4rem);
+}
+
+body.is-tv-mode .period-table {
+  font-size: clamp(0.95rem, 1.4vw, 1.3rem);
+}
+
+body.is-tv-mode .period-table thead th,
+body.is-tv-mode .period-table tbody th,
+body.is-tv-mode .period-table tbody td {
+  padding: clamp(12px, 1.6vw, 20px) clamp(8px, 1vw, 14px);
+}
+
+body.is-tv-mode .period-table tbody td.is-total {
+  font-size: clamp(1.2rem, 1.8vw, 1.6rem);
+}
+
+body.is-tv-mode .matchup {
+  padding: clamp(28px, 4vw, 56px) clamp(20px, 3vw, 64px);
+  gap: clamp(20px, 3vw, 48px);
+}
+
+body.is-tv-mode .team-logo {
+  width: clamp(140px, 16vw, 240px);
+  height: clamp(140px, 16vw, 240px);
+  border-radius: 18px;
+}
+
+body.is-tv-mode .team strong {
+  font-size: clamp(1.3rem, 2vw, 2rem);
+}
+
+body.is-tv-mode .team small {
+  font-size: clamp(0.9rem, 1.3vw, 1.1rem);
+}
+
+body.is-tv-mode .versus {
+  width: clamp(90px, 9vw, 130px);
+  height: clamp(90px, 9vw, 130px);
+}
+
+body.is-tv-mode .versus span {
+  font-size: clamp(1.6rem, 2.4vw, 2.2rem);
+}
+
+body.is-tv-mode .versus small {
+  font-size: clamp(0.8rem, 1.1vw, 1rem);
+}
+
+@media (max-width: 720px) {
+  /* On phones the TV button becomes a third option in the
+     drawer; keep it consistent with the other actions. */
+  body.is-tv-mode .hero-grid {
+    padding: 16px;
+  }
+  body.is-tv-mode .live-score strong {
+    font-size: clamp(4.5rem, 22vw, 8rem);
+  }
+}
+
