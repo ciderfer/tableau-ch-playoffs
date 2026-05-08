@@ -243,6 +243,11 @@
             <button type="submit">Ajouter</button>
           </div>
           <div class="note-suggestions" id="noteSuggestions" aria-label="Idées de notes" hidden></div>
+          <label class="note-search" id="noteSearchWrap" hidden>
+            <span class="visually-hidden">Rechercher dans tes notes</span>
+            <input id="noteSearch" type="search" placeholder="Rechercher dans tes notes…" autocomplete="off">
+            <button type="button" id="noteSearchClear" aria-label="Effacer la recherche" hidden>×</button>
+          </label>
           <div class="notes-list" id="notesList" aria-live="polite"></div>
           <div class="notes-actions">
             <button type="button" id="copyNotes" class="ghost-btn" data-disabled-when-empty>Copier toutes les notes</button>

@@ -1900,6 +1900,103 @@ main {
   font-style: italic;
 }
 
+.note-search {
+  position: relative;
+  display: block;
+  margin-top: -4px;
+}
+
+.note-search[hidden] {
+  display: none;
+}
+
+.note-search input {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 40px 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.92rem;
+  transition: border-color 0.2s var(--ease), background 0.2s var(--ease);
+  appearance: none;
+}
+
+.note-search input::-webkit-search-cancel-button,
+.note-search input::-webkit-search-decoration {
+  display: none;
+}
+
+.note-search input:hover,
+.note-search input:focus {
+  border-color: rgba(159, 230, 255, 0.4);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.note-search input::placeholder {
+  color: color-mix(in srgb, var(--muted) 76%, transparent);
+}
+
+.note-search button {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s var(--ease);
+}
+
+.note-search button:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.note-search button[hidden] {
+  display: none;
+}
+
+:root.ice-mode .note-search input {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+:root.ice-mode .note-search button {
+  background: rgba(7, 38, 62, 0.08);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.note-item.is-match mark {
+  padding: 0 2px;
+  background: rgba(242, 193, 78, 0.32);
+  color: inherit;
+  border-radius: 3px;
+}
+
+:root.ice-mode .note-item.is-match mark {
+  background: rgba(242, 193, 78, 0.42);
+  color: #5b3a00;
+}
+
 .note-suggestions {
   display: flex;
   flex-wrap: wrap;
