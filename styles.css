@@ -1548,12 +1548,6 @@ main {
   padding-top: 30px;
 }
 
-.stats-layout {
-  display: grid;
-  grid-template-columns: 0.9fr 1.1fr;
-  gap: 18px;
-}
-
 .compact-title {
   margin-bottom: 16px;
 }
@@ -1562,79 +1556,17 @@ main {
   font-size: 1.45rem;
 }
 
-.team-stats-grid,
 .leader-grid,
 .lineup-grid {
   display: grid;
   gap: 12px;
 }
 
-.team-stat-card {
-  display: grid;
-  gap: 16px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.team-stat-card > div:first-child {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 4px 12px;
-  align-items: center;
-}
-
-.team-stat-card > div:first-child span {
-  display: grid;
-  place-items: center;
-  grid-row: span 2;
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
-  background: rgba(159, 230, 255, 0.12);
-  color: var(--ice);
-  font-weight: 950;
-}
-
-.team-stat-card small,
 .player-card small,
 .lineup-card-header span,
 .goalie-row span {
   color: var(--muted);
   font-size: 0.78rem;
-  font-weight: 850;
-  text-transform: uppercase;
-}
-
-.metric-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-}
-
-.metric-grid div {
-  min-height: 68px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 10px;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.metric-grid strong,
-.metric-grid span {
-  display: block;
-}
-
-.metric-grid strong {
-  margin-bottom: 8px;
-  font-size: 1.25rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.metric-grid span {
-  color: var(--muted);
-  font-size: 0.72rem;
   font-weight: 850;
   text-transform: uppercase;
 }
@@ -2149,7 +2081,6 @@ footer a:hover {
     margin-bottom: 8px;
   }
 
-  .stats-layout,
   .leader-grid,
   .lineup-grid {
     grid-template-columns: 1fr;
@@ -2234,10 +2165,6 @@ footer a:hover {
 
   .badge {
     width: fit-content;
-  }
-
-  .metric-grid {
-    grid-template-columns: repeat(2, 1fr);
   }
 
   .line-row {
