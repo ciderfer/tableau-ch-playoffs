@@ -1184,7 +1184,7 @@ function applyTheme(mode) {
     || (mode === "auto" && window.matchMedia("(prefers-color-scheme: light)").matches);
   els.themeToggle.setAttribute("aria-pressed", String(isLight));
   if (els.themeLabel) {
-    els.themeLabel.textContent = isLight ? "Nuit" : "Clair";
+    els.themeLabel.textContent = isLight ? "Clair" : "Nuit";
   }
 }
 
