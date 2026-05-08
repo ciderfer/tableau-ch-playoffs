@@ -39,16 +39,28 @@ const fallbackData = {
     {
       team: "MTL",
       status: "Projection",
-      forwards: [["L1", "Ailier G", "Centre", "Ailier D"], ["L2", "Ailier G", "Centre", "Ailier D"]],
-      defense: [["D1", "Défenseur", "Défenseur"], ["D2", "Défenseur", "Défenseur"]],
+      forwards: [
+        ["L1", "Cole Caufield", "Nick Suzuki", "Juraj Slafkovský"],
+        ["L2", "Josh Anderson", "Kirby Dach", "Alex Newhook"]
+      ],
+      defense: [
+        ["D1", "Mike Matheson", "Kaiden Guhle"],
+        ["D2", "Arber Xhekaj", "David Savard"]
+      ],
       goalies: ["Jakub Dobes"]
     },
     {
       team: "BUF",
       status: "Projection",
-      forwards: [["L1", "Ailier G", "Centre", "Ailier D"], ["L2", "Ailier G", "Centre", "Ailier D"]],
-      defense: [["D1", "Défenseur", "Défenseur"], ["D2", "Défenseur", "Défenseur"]],
-      goalies: ["Alex Lyon"]
+      forwards: [
+        ["L1", "Jeff Skinner", "Tage Thompson", "Dylan Cozens"],
+        ["L2", "JJ Peterka", "Tyson Jost", "Viktor Olofsson"]
+      ],
+      defense: [
+        ["D1", "Rasmus Dahlin", "Owen Power"],
+        ["D2", "Henri Jokiharju", "Mattias Samuelsson"]
+      ],
+      goalies: ["Ukko-Pekka Luukkonen"]
     }
   ],
   games: [
@@ -86,6 +98,7 @@ const els = {
   scoreMeta: document.querySelector(".score-meta"),
   lastUpdated: $("#lastUpdated"),
   scoreboardHeadline: $("#scoreboardHeadline"),
+  scoreboardRound: $("#scoreboardRound"),
   seriesScore: $("#seriesScore"),
   mtlRecord: $("#mtlRecord"),
   opponentRecord: $("#opponentRecord"),
@@ -139,6 +152,8 @@ const els = {
 const STORAGE_KEY_NOTES = "tableau-ch-notes";
 const STORAGE_KEY_THEME = "tableau-ch-theme";
 const STORAGE_KEY_ALERTS = "tableau-ch-alerts";
+const STORAGE_KEY_LIVE_CACHE = "tableau-ch-live-cache";
+const LIVE_CACHE_MAX_AGE_MS = 6 * 60 * 60_000; // 6 hours
 const MAX_NOTES = 50;
 
 const POLL_LIVE_MS = 15_000;
@@ -157,6 +172,27 @@ let lastData = null;
 let lastSuccessAt = Date.now();
 let hasRenderedOnce = false;
 let freshnessTimer = null;
+
+// ---------------------- Live data cache ----------------------
+
+function loadCachedLiveData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_LIVE_CACHE);
+    if (!raw) return null;
+    const { data, savedAt } = JSON.parse(raw);
+    if (!data || typeof savedAt !== "number") return null;
+    if (Date.now() - savedAt > LIVE_CACHE_MAX_AGE_MS) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function saveLiveDataToCache(data) {
+  try {
+    localStorage.setItem(STORAGE_KEY_LIVE_CACHE, JSON.stringify({ data, savedAt: Date.now() }));
+  } catch {}
+}
 
 // ---------------------- Data fetching ----------------------
 
@@ -660,6 +696,11 @@ function renderBracket(bracket) {
   }).join("");
 
   els.bracketSection.hidden = false;
+
+  const activeRound = bracket.rounds.find((r) => r.state === "in-progress") || bracket.rounds[bracket.rounds.length - 1];
+  if (activeRound && els.scoreboardRound) {
+    els.scoreboardRound.textContent = `Ronde ${activeRound.round}`;
+  }
 }
 
 function renderGoalFeed(goals, context) {
@@ -1282,6 +1323,7 @@ async function runPoll() {
 
   markFreshness(true);
   lastData = result;
+  saveLiveDataToCache(result);
   renderAppData(result);
   hasRenderedOnce = true;
   scheduleNextPoll(result);
@@ -1540,7 +1582,8 @@ function init() {
   setupForms();
   setupNav();
   setupMiniScore();
-  renderAppData(fallbackData);
+  const cached = loadCachedLiveData();
+  renderAppData(cached || fallbackData);
   renderNotes();
   startPolling();
   setupServiceWorker();

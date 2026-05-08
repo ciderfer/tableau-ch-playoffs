@@ -14,12 +14,12 @@
  *    the browser HTTP cache and CDNs handle those better than we can.
  */
 
-const CACHE_VERSION = "tableau-ch-v10";
+const CACHE_VERSION = "tableau-ch-v11";
 const SHELL_ASSETS = [
   "./",
   "./index.html",
-  "./app.js?v=nav-v10",
-  "./styles.css?v=nav-v10",
+  "./app.js?v=nav-v11",
+  "./styles.css?v=nav-v11",
   "./manifest.json",
   "./assets/icon.svg",
   "./assets/icon-192.png",
