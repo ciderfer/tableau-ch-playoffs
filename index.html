@@ -12,10 +12,20 @@
     <meta property="og:title" content="Tableau CH — Séries NHL 2026">
     <meta property="og:description" content="Pointage en direct, calendrier, stats et trios des Canadiens de Montréal en séries.">
     <meta property="og:locale" content="fr_CA">
+    <meta property="og:image" content="https://tableau-ch-playoffs.netlify.app/assets/og-preview.png">
+    <meta property="og:image:alt" content="Tableau CH - cockpit des series des Canadiens de Montreal">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:url" content="https://tableau-ch-playoffs.netlify.app/">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Tableau CH — Séries NHL 2026">
+    <meta name="twitter:description" content="Pointage en direct, calendrier, stats et trios des Canadiens de Montréal en séries.">
+    <meta name="twitter:image" content="https://tableau-ch-playoffs.netlify.app/assets/og-preview.png">
+    <link rel="canonical" href="https://tableau-ch-playoffs.netlify.app/">
     <link rel="preconnect" href="https://assets.nhle.com" crossorigin>
     <link rel="preconnect" href="https://api-web.nhle.com" crossorigin>
-    <link rel="preload" as="image" href="assets/playoff-ice.png" fetchpriority="high">
+    <link rel="preload" as="image" href="assets/playoff-ice.webp" fetchpriority="high">
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23071019'/%3E%3Cpath d='M20 16v32' stroke='%23d7193f' stroke-width='6' stroke-linecap='round'/%3E%3Cpath d='M44 16v32' stroke='%239fe6ff' stroke-width='6' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='32' r='6' fill='%23f2c14e' stroke='%23ffffff' stroke-width='1.4'/%3E%3C/svg%3E">
@@ -94,6 +104,9 @@
             <span id="dataStatus">Données intégrées</span>
             <small id="lastUpdated">Prêt pour publication</small>
           </div>
+          <p class="fallback-notice" id="fallbackNotice" hidden>
+            Mode hors direct: affichage de données locales temporaires.
+          </p>
           <div class="live-score" id="liveScoreCard">
             <div>
               <span id="awayCode">MTL</span>

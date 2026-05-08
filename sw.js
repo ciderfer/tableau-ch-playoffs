@@ -12,7 +12,7 @@
  *    the browser HTTP cache and CDNs handle those better than we can.
  */
 
-const CACHE_VERSION = "tableau-ch-v1";
+const CACHE_VERSION = "tableau-ch-v2";
 const SHELL_ASSETS = [
   "./",
   "./index.html",
@@ -22,7 +22,8 @@ const SHELL_ASSETS = [
   "./assets/icon.svg",
   "./assets/icon-192.png",
   "./assets/icon-512.png",
-  "./assets/playoff-ice.png"
+  "./assets/playoff-ice.webp",
+  "./assets/player-placeholder.png"
 ];
 
 self.addEventListener("install", (event) => {

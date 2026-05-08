@@ -82,6 +82,7 @@ const els = {
   navToggle: $("#navToggle"),
   primaryNav: $("#primaryNav"),
   dataStatus: $("#dataStatus"),
+  fallbackNotice: $("#fallbackNotice"),
   scoreMeta: document.querySelector(".score-meta"),
   lastUpdated: $("#lastUpdated"),
   scoreboardHeadline: $("#scoreboardHeadline"),
@@ -167,10 +168,11 @@ async function fetchLiveData() {
   inflightController = new AbortController();
   const { signal } = inflightController;
 
-  const endpoints = [
-    { url: "/.netlify/functions/nhl", normalize: normalizeFunctionData, useEtag: true },
-    { url: "https://api-web.nhle.com/v1/club-schedule-season/MTL/now", normalize: normalizeScheduleData, useEtag: false }
-  ];
+  const isLocalhost = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost";
+  const isNetlifyDev = window.location.port === "8888";
+  const endpoints = !isLocalhost || isNetlifyDev
+    ? [{ url: "/.netlify/functions/nhl", normalize: normalizeFunctionData, useEtag: true }]
+    : [];
 
   for (const endpoint of endpoints) {
     try {
@@ -394,8 +396,13 @@ function renderAppData(data) {
     })
     .join("");
 
-  els.dataStatus.textContent = data.source === "live" ? "Données NHL en direct" : "Données intégrées";
+  const isFallbackMode = data.source !== "live";
+  els.dataStatus.textContent = isFallbackMode ? "Données locales" : "Données NHL en direct";
   els.lastUpdated.textContent = data.lastUpdated;
+  if (els.fallbackNotice) {
+    els.fallbackNotice.hidden = !isFallbackMode;
+  }
+  els.scoreMeta?.classList.toggle("is-fallback", isFallbackMode);
   els.scoreboardHeadline.textContent = data.headline;
   els.seriesScore.textContent = data.seriesScore;
   els.mtlRecord.textContent = data.mtlRecord;
@@ -896,7 +903,7 @@ function renderLeaders(groups) {
 function playerCard(player) {
   return `
     <div class="player-card">
-      <img src="${escapeHtml(player.headshot || "https://assets.nhle.com/mugs/nhl/latest/default.png")}" alt="" loading="lazy" decoding="async">
+      <img src="${escapeHtml(player.headshot || "assets/player-placeholder.png")}" alt="" loading="lazy" decoding="async">
       <div>
         <strong>${escapeHtml(player.name)}</strong>
         <small>${escapeHtml(player.meta)}</small>
