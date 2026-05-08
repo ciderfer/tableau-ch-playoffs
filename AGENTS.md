@@ -18,6 +18,8 @@ node --check netlify/functions/nhl.js
 
 For UI-heavy changes, inspect the site in a browser and verify desktop and mobile layouts.
 
+For PWA or caching changes, verify `manifest.json`, `sw.js`, and the icon assets together. The service worker must not cache Netlify Function responses that carry live NHL data.
+
 ## Data Rules
 
 - NHL API data should flow through `netlify/functions/nhl.js` where possible.
@@ -37,4 +39,3 @@ For UI-heavy changes, inspect the site in a browser and verify desktop and mobil
 - Do not revert user changes unless explicitly requested.
 - Keep commits focused.
 - Push to `main` only when changes are validated and ready to deploy.
-

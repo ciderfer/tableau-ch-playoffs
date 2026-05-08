@@ -9,11 +9,13 @@ Repository: https://github.com/ciderfer/tableau-ch-playoffs
 
 - Score live MTL vs adversaire de série
 - Calendrier de la série
-- Portrait des facteurs clés
-- Comparatif d'équipes
+- Portrait dynamique vs adversaire courant
+- Bracket du parcours du CH
 - Leaders des séries
 - Alignements projetés depuis NHL.com avec fallback algorithmique
-- Carnet de match local par navigateur
+- Carnet de match local avec suggestions et recherche
+- Mode TV plein écran pour deuxième écran
+- PWA installable avec shell hors ligne
 - Déploiement automatique GitHub vers Netlify
 
 ## Stack
@@ -21,6 +23,7 @@ Repository: https://github.com/ciderfer/tableau-ch-playoffs
 - HTML, CSS et JavaScript statiques
 - Netlify Functions pour les données NHL côté serveur
 - Netlify CI/CD depuis GitHub
+- PWA native via Web App Manifest et service worker
 
 ## Key Files
 
@@ -29,6 +32,9 @@ Repository: https://github.com/ciderfer/tableau-ch-playoffs
 - `app.js`: rendu client, notes locales et rafraîchissement
 - `netlify/functions/nhl.js`: agrégation NHL API + NHL.com
 - `netlify.toml`: configuration Netlify
+- `manifest.json`: métadonnées PWA
+- `sw.js`: cache du shell statique, sans cache des fonctions live
+- `assets/icon.svg`, `assets/icon-192.png`, `assets/icon-512.png`: icônes PWA
 - `assets/playoff-ice.png`: image de fond
 
 ## Local Usage
@@ -40,6 +46,8 @@ index.html
 ```
 
 Certaines données live passent par la fonction Netlify. En local, l'application conserve un fallback statique si la fonction n'est pas disponible.
+
+Pour tester le service worker et l'installation PWA, utiliser un serveur local ou un deploy preview Netlify plutôt que l'ouverture directe du fichier.
 
 ## Verification
 
