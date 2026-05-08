@@ -18,8 +18,8 @@ const CACHE_VERSION = "tableau-ch-v10";
 const SHELL_ASSETS = [
   "./",
   "./index.html",
-  "./app.js?v=nav-v9",
-  "./styles.css?v=nav-v9",
+  "./app.js?v=nav-v10",
+  "./styles.css?v=nav-v10",
   "./manifest.json",
   "./assets/icon.svg",
   "./assets/icon-192.png",

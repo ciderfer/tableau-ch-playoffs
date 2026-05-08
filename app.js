@@ -411,6 +411,8 @@ function renderAppData(data) {
   els.opponentLogo.src = data.opponentLogo || fallbackData.opponentLogo;
 
   const status = data.gameStatus || fallbackData.gameStatus;
+  const oppCode = status.awayCode === "MTL" ? status.homeCode : status.awayCode;
+  if (els.opponentLogo && oppCode) els.opponentLogo.alt = `Logo des ${escapeHtml(oppCode)}`;
   const previousStatus = lastStatus;
   lastStatus = status;
   renderGameStatus(status, data.recentGoals, previousStatus);
@@ -1364,19 +1366,19 @@ function setupNav() {
 
   if (!("IntersectionObserver" in window) || !sections.length) return;
 
+  const visibleIds = new Set();
   const observer = new IntersectionObserver((entries) => {
     for (const entry of entries) {
-      if (entry.isIntersecting) {
-        for (const link of links.values()) {
-          link.classList.remove("is-active");
-          link.removeAttribute("aria-current");
-        }
-        const link = links.get(entry.target.id);
-        if (link) {
-          link.classList.add("is-active");
-          link.setAttribute("aria-current", "page");
-        }
-      }
+      if (entry.isIntersecting) visibleIds.add(entry.target.id);
+      else visibleIds.delete(entry.target.id);
+    }
+    // Always activate the first visible section in document order.
+    const activeId = sections.find((s) => visibleIds.has(s.id))?.id ?? null;
+    for (const [id, link] of links) {
+      const active = id === activeId;
+      link.classList.toggle("is-active", active);
+      if (active) link.setAttribute("aria-current", "page");
+      else link.removeAttribute("aria-current");
     }
   }, { rootMargin: "-45% 0px -45% 0px", threshold: 0 });
 
