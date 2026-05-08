@@ -397,7 +397,7 @@ function renderAppData(data) {
     .join("");
 
   const isFallbackMode = data.source !== "live";
-  els.dataStatus.textContent = isFallbackMode ? "Données locales" : "Données NHL en direct";
+  els.dataStatus.textContent = isFallbackMode ? "Mode local" : "NHL direct";
   els.lastUpdated.textContent = data.lastUpdated;
   if (els.fallbackNotice) {
     els.fallbackNotice.hidden = !isFallbackMode;
