@@ -1184,7 +1184,7 @@ function applyTheme(mode) {
     || (mode === "auto" && window.matchMedia("(prefers-color-scheme: light)").matches);
   els.themeToggle.setAttribute("aria-pressed", String(isLight));
   if (els.themeLabel) {
-    els.themeLabel.textContent = isLight ? "Nuit" : "Glace";
+    els.themeLabel.textContent = isLight ? "Nuit" : "Clair";
   }
 }
 
@@ -1367,9 +1367,15 @@ function setupNav() {
   const observer = new IntersectionObserver((entries) => {
     for (const entry of entries) {
       if (entry.isIntersecting) {
-        for (const link of links.values()) link.classList.remove("is-active");
+        for (const link of links.values()) {
+          link.classList.remove("is-active");
+          link.removeAttribute("aria-current");
+        }
         const link = links.get(entry.target.id);
-        if (link) link.classList.add("is-active");
+        if (link) {
+          link.classList.add("is-active");
+          link.setAttribute("aria-current", "page");
+        }
       }
     }
   }, { rootMargin: "-45% 0px -45% 0px", threshold: 0 });

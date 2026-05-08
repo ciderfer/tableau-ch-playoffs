@@ -59,23 +59,27 @@
         </button>
 
         <div class="nav-actions" id="primaryNav" data-nav>
-          <a href="#calendrier" data-spy="calendrier">Calendrier</a>
-          <a href="#portrait" data-spy="portrait">Portrait</a>
-          <a href="#bracket" data-spy="bracket">Bracket</a>
-          <a href="#stats" data-spy="stats">Stats</a>
-          <a href="#notes" data-spy="notes">Notes</a>
-          <button class="theme-action" id="alertsToggle" type="button" aria-pressed="false" title="Alertes sonores quand le CH marque">
-            <span class="alerts-icon" aria-hidden="true">●</span>
-            <span class="alerts-label">Alertes</span>
-          </button>
-          <button class="theme-action" id="tvToggle" type="button" aria-pressed="false" title="Mode TV plein écran (2e écran pendant le match)">
-            <span class="tv-icon" aria-hidden="true">◱</span>
-            <span class="tv-label">TV</span>
-          </button>
-          <button class="theme-action" id="themeToggle" type="button" aria-pressed="false" title="Basculer le thème">
-            <span class="theme-icon" aria-hidden="true">◐</span>
-            <span class="theme-label">Glace</span>
-          </button>
+          <div class="nav-links" aria-label="Sections">
+            <a href="#calendrier" data-spy="calendrier">Calendrier</a>
+            <a href="#portrait" data-spy="portrait">Portrait</a>
+            <a href="#bracket" data-spy="bracket">Parcours</a>
+            <a href="#stats" data-spy="stats">Stats</a>
+            <a href="#notes" data-spy="notes">Notes</a>
+          </div>
+          <div class="nav-tools" aria-label="Contrôles">
+            <button class="theme-action" id="alertsToggle" type="button" aria-pressed="false" title="Alertes sonores quand le CH marque">
+              <span class="alerts-icon" aria-hidden="true">●</span>
+              <span class="alerts-label">Alertes</span>
+            </button>
+            <button class="theme-action" id="tvToggle" type="button" aria-pressed="false" title="Mode TV plein écran (2e écran pendant le match)">
+              <span class="tv-icon" aria-hidden="true">◱</span>
+              <span class="tv-label">TV</span>
+            </button>
+            <button class="theme-action" id="themeToggle" type="button" aria-pressed="false" title="Basculer entre le thème glace et le thème nuit">
+              <span class="theme-icon" aria-hidden="true">◐</span>
+              <span class="theme-label">Clair</span>
+            </button>
+          </div>
         </div>
       </nav>
 
