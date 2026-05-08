@@ -1,8 +1,8 @@
 const fallbackData = {
   source: "fallback",
-  lastUpdated: "Données vérifiées le 6 mai 2026",
-  headline: "Match 1 ce soir",
-  seriesScore: "0-0",
+  lastUpdated: "Données vérifiées le 8 mai 2026",
+  headline: "Match 2 ce soir",
+  seriesScore: "—",
   gameStatus: {
     awayCode: "MTL",
     homeCode: "BUF",
@@ -11,7 +11,7 @@ const fallbackData = {
     state: "Avant-match",
     detail: "19 h HE",
     isLive: false,
-    startTimeUTC: "2026-05-06T23:00:00Z"
+    startTimeUTC: "2026-05-08T23:00:00Z"
   },
   mtlRecord: "48-24-10",
   opponentRecord: "50-23-9",
@@ -52,8 +52,8 @@ const fallbackData = {
     }
   ],
   games: [
-    { date: "6 mai", label: "Match 1", detail: "MTL @ BUF · KeyBank Center · 19 h HE", tag: "Ce soir", kind: "away" },
-    { date: "8 mai", label: "Match 2", detail: "MTL @ BUF · KeyBank Center", tag: "Route", kind: "away" },
+    { date: "6 mai", label: "Match 1", detail: "MTL @ BUF · KeyBank Center", tag: "Final", kind: "final" },
+    { date: "8 mai", label: "Match 2", detail: "MTL @ BUF · KeyBank Center · 19 h HE", tag: "Ce soir", kind: "away" },
     { date: "10 mai", label: "Match 3", detail: "BUF @ MTL · Centre Bell", tag: "Maison", kind: "home" },
     { date: "12 mai", label: "Match 4", detail: "BUF @ MTL · Centre Bell", tag: "Maison", kind: "home" },
     { date: "14 mai", label: "Match 5", detail: "MTL @ BUF · si nécessaire", tag: "Au besoin", kind: "away" },

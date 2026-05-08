@@ -89,11 +89,6 @@ body::before {
     url("assets/playoff-ice.webp") center top / cover no-repeat;
 }
 
-:root.ice-mode body::before,
-:root:not(.night-mode) body::before {
-  /* Default dark — overridden below for light mode */
-}
-
 @media (prefers-color-scheme: light) {
   :root:not(.night-mode) body::before {
     background:
