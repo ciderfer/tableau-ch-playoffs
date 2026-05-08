@@ -71,6 +71,9 @@ const els = {
   notesList: $("#notesList"),
   notesMeta: $("#notesMeta"),
   noteSuggestions: $("#noteSuggestions"),
+  noteSearchWrap: $("#noteSearchWrap"),
+  noteSearch: $("#noteSearch"),
+  noteSearchClear: $("#noteSearchClear"),
   copyNotes: $("#copyNotes"),
   clearNotes: $("#clearNotes"),
   themeToggle: $("#themeToggle"),
@@ -961,35 +964,96 @@ function saveNotes(notes) {
   localStorage.setItem(STORAGE_KEY_NOTES, JSON.stringify(notes));
 }
 
+const SEARCH_VISIBLE_THRESHOLD = 3;
+let noteSearchQuery = "";
+
 function renderNotes() {
   const notes = getNotes();
+  const total = notes.length;
 
-  if (!notes.length) {
+  // Show the search bar only when there's a meaningful number of notes,
+  // and reset the query if we drop back under the threshold so the user
+  // doesn't end up with a hidden filter still applied.
+  if (els.noteSearchWrap) {
+    if (total >= SEARCH_VISIBLE_THRESHOLD) {
+      els.noteSearchWrap.hidden = false;
+    } else {
+      els.noteSearchWrap.hidden = true;
+      if (noteSearchQuery) {
+        noteSearchQuery = "";
+        if (els.noteSearch) els.noteSearch.value = "";
+      }
+    }
+  }
+
+  const query = noteSearchQuery.trim().toLowerCase();
+  const filtered = query
+    ? notes
+        .map((note, index) => ({ note, index }))
+        .filter(({ note }) => note.text.toLowerCase().includes(query))
+    : notes.map((note, index) => ({ note, index }));
+
+  if (els.noteSearchClear) {
+    els.noteSearchClear.hidden = !query;
+  }
+
+  if (!total) {
     els.notesList.innerHTML = `<p class="note-empty">Aucune note encore — clique une suggestion ou tape ta propre observation.</p>`;
+  } else if (!filtered.length) {
+    els.notesList.innerHTML = `<p class="note-empty">Aucune note ne correspond à « ${escapeHtml(noteSearchQuery)} ».</p>`;
   } else {
-    els.notesList.innerHTML = notes
-      .map((note, index) => `
-        <div class="note-item">
+    els.notesList.innerHTML = filtered
+      .map(({ note, index }) => {
+        const text = query ? highlightMatch(note.text, query) : escapeHtml(note.text);
+        const itemClass = query ? "note-item is-match" : "note-item";
+        return `
+        <div class="${itemClass}">
           <div class="note-item-body">
-            <span>${escapeHtml(note.text)}</span>
+            <span>${text}</span>
             ${note.ts ? `<time datetime="${escapeHtml(new Date(note.ts).toISOString())}">${escapeHtml(formatNoteTime(new Date(note.ts)))}</time>` : ""}
           </div>
           <button type="button" data-delete="${index}" aria-label="Supprimer cette note">×</button>
         </div>
-      `)
+      `;
+      })
       .join("");
   }
 
-  els.notesMeta.textContent = notes.length === 0
-    ? "Aucune note"
-    : notes.length === 1
-      ? "1 note"
-      : `${notes.length} notes`;
-  els.notesMeta.classList.toggle("is-active", notes.length > 0);
+  let metaLabel;
+  if (total === 0) {
+    metaLabel = "Aucune note";
+  } else if (query) {
+    metaLabel = filtered.length === 0
+      ? `0 sur ${total}`
+      : `${filtered.length} sur ${total}`;
+  } else if (total === 1) {
+    metaLabel = "1 note";
+  } else {
+    metaLabel = `${total} notes`;
+  }
+  els.notesMeta.textContent = metaLabel;
+  els.notesMeta.classList.toggle("is-active", total > 0);
 
   for (const button of document.querySelectorAll("[data-disabled-when-empty]")) {
-    button.disabled = notes.length === 0;
+    button.disabled = total === 0;
   }
+}
+
+function highlightMatch(text, query) {
+  if (!query) return escapeHtml(text);
+  const lower = text.toLowerCase();
+  const q = query.toLowerCase();
+  let result = "";
+  let cursor = 0;
+  let idx = lower.indexOf(q, cursor);
+  while (idx !== -1) {
+    result += escapeHtml(text.slice(cursor, idx));
+    result += `<mark>${escapeHtml(text.slice(idx, idx + q.length))}</mark>`;
+    cursor = idx + q.length;
+    idx = lower.indexOf(q, cursor);
+  }
+  result += escapeHtml(text.slice(cursor));
+  return result;
 }
 
 const DEFAULT_NOTE_SUGGESTIONS = [
@@ -1341,6 +1405,24 @@ function setupForms() {
       const target = event.target.closest("[data-note-suggestion]");
       if (!target) return;
       applyNoteSuggestion(target.dataset.noteSuggestion);
+    });
+  }
+
+  if (els.noteSearch) {
+    els.noteSearch.addEventListener("input", (event) => {
+      noteSearchQuery = event.target.value;
+      renderNotes();
+    });
+  }
+
+  if (els.noteSearchClear) {
+    els.noteSearchClear.addEventListener("click", () => {
+      noteSearchQuery = "";
+      if (els.noteSearch) {
+        els.noteSearch.value = "";
+        els.noteSearch.focus();
+      }
+      renderNotes();
     });
   }
 }
