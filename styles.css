@@ -337,13 +337,21 @@ footer {
   font: inherit;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: background 0.2s var(--ease), color 0.2s var(--ease);
+  transition: background 0.2s var(--ease), color 0.2s var(--ease),
+    transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
 
 .nav-actions a:hover,
 .theme-action:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text);
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--ice);
+  transform: translateY(-1px);
+  box-shadow: inset 0 0 0 1px rgba(159, 230, 255, 0.32);
+}
+
+.nav-actions a:active,
+.theme-action:active {
+  transform: translateY(0);
 }
 
 .nav-actions a.is-active {
@@ -351,9 +359,23 @@ footer {
   color: var(--text);
 }
 
+:root.ice-mode .nav-actions a:hover,
+:root.ice-mode .theme-action:hover {
+  background: rgba(7, 89, 133, 0.1);
+  color: #075985;
+  box-shadow: inset 0 0 0 1px rgba(7, 89, 133, 0.28);
+}
+
 :root.ice-mode .nav-actions a.is-active {
   background: rgba(7, 89, 133, 0.12);
   color: #062b40;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-actions a:hover,
+  .theme-action:hover {
+    transform: none;
+  }
 }
 
 .theme-action {
