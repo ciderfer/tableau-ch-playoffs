@@ -120,6 +120,8 @@ const els = {
   goalList: $("#goalList"),
   goalFeedEyebrow: $("#goalFeedEyebrow"),
   goalFeedStatus: $("#goalFeedStatus"),
+  tvToggle: $("#tvToggle"),
+  tvExit: $("#tvExit"),
   bracketSection: $("#bracket"),
   bracketRounds: $("#bracketRounds"),
   portraitSection: $("#portrait"),
@@ -1372,6 +1374,59 @@ function setupAlerts() {
   els.alertsToggle.addEventListener("click", toggleAlerts);
 }
 
+// ---------------------- TV mode ----------------------
+
+function setupTVMode() {
+  if (!els.tvToggle) return;
+
+  els.tvToggle.addEventListener("click", () => {
+    if (document.body.classList.contains("is-tv-mode")) {
+      exitTVMode();
+    } else {
+      enterTVMode();
+    }
+  });
+
+  els.tvExit?.addEventListener("click", exitTVMode);
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && document.body.classList.contains("is-tv-mode")) {
+      exitTVMode();
+    }
+  });
+
+  document.addEventListener("fullscreenchange", () => {
+    // If the user leaves fullscreen via the browser UI (Esc on browser
+    // chrome, F11, etc.) we sync our class state so the chrome reappears.
+    if (!document.fullscreenElement && document.body.classList.contains("is-tv-mode")) {
+      document.body.classList.remove("is-tv-mode");
+      els.tvToggle.setAttribute("aria-pressed", "false");
+      if (els.tvExit) els.tvExit.hidden = true;
+    }
+  });
+}
+
+function enterTVMode() {
+  document.body.classList.add("is-tv-mode");
+  els.tvToggle?.setAttribute("aria-pressed", "true");
+  if (els.tvExit) els.tvExit.hidden = false;
+  // Try to go true fullscreen for the second-screen experience. If the
+  // browser refuses (iframe, permissions), the class-based layout still
+  // covers most of the value.
+  if (document.documentElement.requestFullscreen) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+}
+
+function exitTVMode() {
+  document.body.classList.remove("is-tv-mode");
+  els.tvToggle?.setAttribute("aria-pressed", "false");
+  if (els.tvExit) els.tvExit.hidden = true;
+  if (document.exitFullscreen && document.fullscreenElement) {
+    document.exitFullscreen().catch(() => {});
+  }
+}
+
 function setupServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
   // Browsers refuse SW registration on insecure origins (file://, plain http
@@ -1384,6 +1439,7 @@ function setupServiceWorker() {
 function init() {
   setupTheme();
   setupAlerts();
+  setupTVMode();
   setupForms();
   setupNav();
   setupMiniScore();

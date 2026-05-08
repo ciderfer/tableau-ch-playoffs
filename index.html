@@ -58,6 +58,10 @@
             <span class="alerts-icon" aria-hidden="true">●</span>
             <span class="alerts-label">Alertes</span>
           </button>
+          <button class="theme-action" id="tvToggle" type="button" aria-pressed="false" title="Mode TV plein écran (2e écran pendant le match)">
+            <span class="tv-icon" aria-hidden="true">◱</span>
+            <span class="tv-label">TV</span>
+          </button>
           <button class="theme-action" id="themeToggle" type="button" aria-pressed="false" title="Basculer le thème">
             <span class="theme-icon" aria-hidden="true">◐</span>
             <span class="theme-label">Glace</span>
@@ -247,6 +251,11 @@
         </form>
       </section>
     </main>
+
+    <button type="button" class="tv-exit" id="tvExit" hidden>
+      <span aria-hidden="true">×</span>
+      <span>Quitter le mode TV</span>
+    </button>
 
     <aside class="mini-score" id="miniScore" aria-hidden="true">
       <span class="mini-team"><strong id="miniAwayCode">MTL</strong> <em id="miniAwayScore">0</em></span>
