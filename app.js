@@ -17,30 +17,6 @@ const fallbackData = {
   opponentRecord: "50-23-9",
   mtlLogo: "https://assets.nhle.com/logos/nhl/svg/MTL_light.svg",
   opponentLogo: "https://assets.nhle.com/logos/nhl/svg/BUF_light.svg",
-  teamStats: [
-    {
-      code: "MTL",
-      name: "Canadiens",
-      record: "48-24-10",
-      metrics: [
-        { label: "Points", value: "106" },
-        { label: "Buts / match", value: "3.45" },
-        { label: "Alloués / match", value: "3.12" },
-        { label: "Diff.", value: "+27" }
-      ]
-    },
-    {
-      code: "BUF",
-      name: "Sabres",
-      record: "50-23-9",
-      metrics: [
-        { label: "Points", value: "109" },
-        { label: "Buts / match", value: "3.51" },
-        { label: "Alloués / match", value: "2.94" },
-        { label: "Diff.", value: "+47" }
-      ]
-    }
-  ],
   leaders: [
     {
       team: "MTL",
@@ -118,7 +94,6 @@ const els = {
   gameState: $("#gameState"),
   gameClock: $("#gameClock"),
   liveScoreCard: $("#liveScoreCard"),
-  teamStatsGrid: $("#teamStatsGrid"),
   leaderGrid: $("#leaderGrid"),
   lineupGrid: $("#lineupGrid"),
   lineupStatus: $("#lineupStatus"),
@@ -427,7 +402,6 @@ function renderAppData(data) {
   const previousStatus = lastStatus;
   lastStatus = status;
   renderGameStatus(status, data.recentGoals, previousStatus);
-  renderTeamStats(data.teamStats || fallbackData.teamStats);
   renderLeaders(data.leaders || fallbackData.leaders);
   renderLineups(data.lineups || fallbackData.lineups);
   renderLineupUpdated(data.lastUpdated);
@@ -899,28 +873,6 @@ function playGoalHorn() {
     playNote(207, 0.65, 1.4);
     playNote(311, 0.65, 1.4);
   } catch {}
-}
-
-function renderTeamStats(teams) {
-  els.teamStatsGrid.innerHTML = teams
-    .map((team) => `
-      <article class="team-stat-card">
-        <div>
-          <span>${escapeHtml(team.code)}</span>
-          <strong>${escapeHtml(team.name)}</strong>
-          <small>${escapeHtml(team.record)}</small>
-        </div>
-        <div class="metric-grid">
-          ${team.metrics.map((metric) => `
-            <div>
-              <strong>${escapeHtml(metric.value)}</strong>
-              <span>${escapeHtml(metric.label)}</span>
-            </div>
-          `).join("")}
-        </div>
-      </article>
-    `)
-    .join("");
 }
 
 function renderLeaders(groups) {

@@ -582,10 +582,6 @@ async function enrichPayload(payload, mtlStanding, opponentStanding, opponentCod
 
   return {
     ...payload,
-    teamStats: [
-      teamStatsCard("MTL", mtlStanding),
-      teamStatsCard(opponentCode, opponentStanding)
-    ],
     leaders: [
       leaderGroup("MTL", mtlStats),
       leaderGroup(opponentCode, opponentStats)
@@ -701,24 +697,6 @@ function recordText(row) {
   return `${row.wins}-${row.losses}-${row.otLosses}`;
 }
 
-function teamStatsCard(code, row) {
-  const games = row?.gamesPlayed || 82;
-  const goalsFor = row?.goalFor || 0;
-  const goalsAgainst = row?.goalAgainst || 0;
-
-  return {
-    code,
-    name: row?.teamCommonName?.default || code,
-    record: recordText(row),
-    metrics: [
-      { label: "Points", value: String(row?.points ?? "—") },
-      { label: "Buts / match", value: decimal(goalsFor / games) },
-      { label: "Alloués / match", value: decimal(goalsAgainst / games) },
-      { label: "Diff.", value: signed(row?.goalDifferential ?? 0) }
-    ]
-  };
-}
-
 function leaderGroup(team, stats) {
   const skaters = [...(stats?.skaters || [])]
     .sort((a, b) => b.points - a.points || b.goals - a.goals || b.shots - a.shots)
@@ -804,14 +782,6 @@ function playerName(player) {
 function compactName(player) {
   const name = playerName(player);
   return name || "À confirmer";
-}
-
-function decimal(value) {
-  return Number.isFinite(value) ? value.toFixed(2) : "—";
-}
-
-function signed(value) {
-  return value > 0 ? `+${value}` : String(value);
 }
 
 function pct(value) {
