@@ -1,8 +1,8 @@
 const fallbackData = {
   source: "fallback",
-  lastUpdated: "Données vérifiées le 6 mai 2026",
-  headline: "Match 1 ce soir",
-  seriesScore: "0-0",
+  lastUpdated: "Données vérifiées le 8 mai 2026",
+  headline: "Match 2 ce soir",
+  seriesScore: "—",
   gameStatus: {
     awayCode: "MTL",
     homeCode: "BUF",
@@ -11,7 +11,7 @@ const fallbackData = {
     state: "Avant-match",
     detail: "19 h HE",
     isLive: false,
-    startTimeUTC: "2026-05-06T23:00:00Z"
+    startTimeUTC: "2026-05-08T23:00:00Z"
   },
   mtlRecord: "48-24-10",
   opponentRecord: "50-23-9",
@@ -52,8 +52,8 @@ const fallbackData = {
     }
   ],
   games: [
-    { date: "6 mai", label: "Match 1", detail: "MTL @ BUF · KeyBank Center · 19 h HE", tag: "Ce soir", kind: "away" },
-    { date: "8 mai", label: "Match 2", detail: "MTL @ BUF · KeyBank Center", tag: "Route", kind: "away" },
+    { date: "6 mai", label: "Match 1", detail: "MTL @ BUF · KeyBank Center", tag: "Final", kind: "final" },
+    { date: "8 mai", label: "Match 2", detail: "MTL @ BUF · KeyBank Center · 19 h HE", tag: "Ce soir", kind: "away" },
     { date: "10 mai", label: "Match 3", detail: "BUF @ MTL · Centre Bell", tag: "Maison", kind: "home" },
     { date: "12 mai", label: "Match 4", detail: "BUF @ MTL · Centre Bell", tag: "Maison", kind: "home" },
     { date: "14 mai", label: "Match 5", detail: "MTL @ BUF · si nécessaire", tag: "Au besoin", kind: "away" },
@@ -397,7 +397,7 @@ function renderAppData(data) {
     .join("");
 
   const isFallbackMode = data.source !== "live";
-  els.dataStatus.textContent = isFallbackMode ? "Données locales" : "Données NHL en direct";
+  els.dataStatus.textContent = isFallbackMode ? "Mode local" : "NHL direct";
   els.lastUpdated.textContent = data.lastUpdated;
   if (els.fallbackNotice) {
     els.fallbackNotice.hidden = !isFallbackMode;
@@ -411,6 +411,8 @@ function renderAppData(data) {
   els.opponentLogo.src = data.opponentLogo || fallbackData.opponentLogo;
 
   const status = data.gameStatus || fallbackData.gameStatus;
+  const oppCode = status.awayCode === "MTL" ? status.homeCode : status.awayCode;
+  if (els.opponentLogo && oppCode) els.opponentLogo.alt = `Logo des ${escapeHtml(oppCode)}`;
   const previousStatus = lastStatus;
   lastStatus = status;
   renderGameStatus(status, data.recentGoals, previousStatus);
@@ -1184,7 +1186,7 @@ function applyTheme(mode) {
     || (mode === "auto" && window.matchMedia("(prefers-color-scheme: light)").matches);
   els.themeToggle.setAttribute("aria-pressed", String(isLight));
   if (els.themeLabel) {
-    els.themeLabel.textContent = isLight ? "Nuit" : "Glace";
+    els.themeLabel.textContent = isLight ? "Clair" : "Nuit";
   }
 }
 
@@ -1364,13 +1366,19 @@ function setupNav() {
 
   if (!("IntersectionObserver" in window) || !sections.length) return;
 
+  const visibleIds = new Set();
   const observer = new IntersectionObserver((entries) => {
     for (const entry of entries) {
-      if (entry.isIntersecting) {
-        for (const link of links.values()) link.classList.remove("is-active");
-        const link = links.get(entry.target.id);
-        if (link) link.classList.add("is-active");
-      }
+      if (entry.isIntersecting) visibleIds.add(entry.target.id);
+      else visibleIds.delete(entry.target.id);
+    }
+    // Always activate the first visible section in document order.
+    const activeId = sections.find((s) => visibleIds.has(s.id))?.id ?? null;
+    for (const [id, link] of links) {
+      const active = id === activeId;
+      link.classList.toggle("is-active", active);
+      if (active) link.setAttribute("aria-current", "page");
+      else link.removeAttribute("aria-current");
     }
   }, { rootMargin: "-45% 0px -45% 0px", threshold: 0 });
 

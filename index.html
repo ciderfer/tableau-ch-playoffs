@@ -26,7 +26,7 @@
     <link rel="preconnect" href="https://assets.nhle.com" crossorigin>
     <link rel="preconnect" href="https://api-web.nhle.com" crossorigin>
     <link rel="preload" as="image" href="assets/playoff-ice.webp" fetchpriority="high">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=nav-v10">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23071019'/%3E%3Cpath d='M20 16v32' stroke='%23d7193f' stroke-width='6' stroke-linecap='round'/%3E%3Cpath d='M44 16v32' stroke='%239fe6ff' stroke-width='6' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='32' r='6' fill='%23f2c14e' stroke='%23ffffff' stroke-width='1.4'/%3E%3C/svg%3E">
     <link rel="apple-touch-icon" href="assets/icon-192.png">
@@ -35,7 +35,7 @@
     <meta name="apple-mobile-web-app-title" content="Tableau CH">
   </head>
   <body>
-    <a class="skip-link" href="#top">Aller au contenu</a>
+    <a class="skip-link" href="#main">Aller au contenu</a>
     <div class="ice-halo" aria-hidden="true"></div>
 
     <header class="hero">
@@ -59,29 +59,45 @@
         </button>
 
         <div class="nav-actions" id="primaryNav" data-nav>
-          <a href="#calendrier" data-spy="calendrier">Calendrier</a>
-          <a href="#portrait" data-spy="portrait">Portrait</a>
-          <a href="#bracket" data-spy="bracket">Bracket</a>
-          <a href="#stats" data-spy="stats">Stats</a>
-          <a href="#notes" data-spy="notes">Notes</a>
-          <button class="theme-action" id="alertsToggle" type="button" aria-pressed="false" title="Alertes sonores quand le CH marque">
-            <span class="alerts-icon" aria-hidden="true">●</span>
-            <span class="alerts-label">Alertes</span>
-          </button>
-          <button class="theme-action" id="tvToggle" type="button" aria-pressed="false" title="Mode TV plein écran (2e écran pendant le match)">
-            <span class="tv-icon" aria-hidden="true">◱</span>
-            <span class="tv-label">TV</span>
-          </button>
-          <button class="theme-action" id="themeToggle" type="button" aria-pressed="false" title="Basculer le thème">
-            <span class="theme-icon" aria-hidden="true">◐</span>
-            <span class="theme-label">Glace</span>
-          </button>
+          <div class="nav-links" aria-label="Sections">
+            <a href="#calendrier" data-spy="calendrier">Calendrier</a>
+            <a href="#portrait" data-spy="portrait">Portrait</a>
+            <a href="#bracket" data-spy="bracket">Parcours</a>
+            <a href="#stats" data-spy="stats">Stats</a>
+            <a href="#notes" data-spy="notes">Notes</a>
+          </div>
+          <div class="nav-tools" aria-label="Contrôles">
+            <button class="theme-action" id="alertsToggle" type="button" aria-pressed="false" title="Alertes sonores quand le CH marque">
+              <svg class="btn-icon alerts-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M8 2a5 5 0 0 1 5 5v2.2l1 1.8H2l1-1.8V7a5 5 0 0 1 5-5z"/>
+                <path d="M6.5 13a1.5 1.5 0 0 0 3 0"/>
+              </svg>
+              <span class="alerts-label nav-label">Alertes</span>
+            </button>
+            <button class="theme-action" id="tvToggle" type="button" aria-pressed="false" title="Mode TV plein écran (2e écran pendant le match)">
+              <svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="1" y="2" width="14" height="9" rx="1.5"/>
+                <path d="M5 14h6M8 11v3"/>
+              </svg>
+              <span class="tv-label nav-label">TV</span>
+            </button>
+            <button class="theme-action" id="themeToggle" type="button" aria-pressed="false" title="Basculer le thème">
+              <svg class="btn-icon theme-icon-moon" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path d="M13.3 10.3A6 6 0 0 1 5.7 2.7 6 6 0 1 0 13.3 10.3z"/>
+              </svg>
+              <svg class="btn-icon theme-icon-sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+                <circle cx="8" cy="8" r="2.5" fill="currentColor" stroke="none"/>
+                <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.5 1.5M11.1 11.1l1.5 1.5M3.4 12.6l1.5-1.5M11.1 4.9l1.5-1.5"/>
+              </svg>
+              <span class="theme-label nav-label">Nuit</span>
+            </button>
+          </div>
         </div>
       </nav>
 
       <section id="top" class="hero-grid">
         <div class="hero-copy">
-          <p class="eyebrow">Ronde 2 · 6 mai 2026</p>
+          <p class="eyebrow">Ronde 2 · Séries 2026</p>
           <h1>Le cockpit des séries du CH.</h1>
           <p class="lede">
             Score live, calendrier, stats, trios projetés et signaux clés pour
@@ -98,11 +114,11 @@
         <aside class="scoreboard" aria-label="Résumé de la série">
           <div class="scoreboard-header">
             <span>Ronde 2</span>
-            <strong id="scoreboardHeadline">Match 1 ce soir</strong>
+            <strong id="scoreboardHeadline">Match 2 ce soir</strong>
           </div>
           <div class="score-meta" aria-live="polite">
             <span id="dataStatus">Données intégrées</span>
-            <small id="lastUpdated">Prêt pour publication</small>
+            <small id="lastUpdated">Chargement…</small>
           </div>
           <p class="fallback-notice" id="fallbackNotice" hidden>
             Mode hors direct: affichage de données locales temporaires.
@@ -160,7 +176,7 @@
       <p class="noscript-banner">JavaScript est nécessaire pour les données en direct. Le contenu intégré reste consultable ci-dessous.</p>
     </noscript>
 
-    <main>
+    <main id="main" tabindex="-1">
       <section id="calendrier" class="section-grid" aria-labelledby="calendrier-title">
         <div>
           <p class="eyebrow">Calendrier</p>
@@ -190,7 +206,7 @@
             <p class="eyebrow">Parcours du CH</p>
             <h2 id="bracket-title">Route vers la Coupe</h2>
           </div>
-          <span class="status-pill" id="bracketStatus">Bracket NHL</span>
+          <span class="status-pill" id="bracketStatus">Tableau NHL</span>
         </div>
         <ol class="bracket-rounds" id="bracketRounds"></ol>
       </section>
@@ -283,10 +299,9 @@
 
     <footer>
       <span>Données NHL; site non affilié à la LNH ni aux Canadiens. Notes privées par navigateur.</span>
-      <a href="https://www.nhl.com/canadiens/news/mtl-buf-what-you-need-to-know-game-1-may-6-2026">Aperçu officiel MTL@BUF</a>
-      <a href="https://www.nhl.com/news/nhl-lineup-projections-2025-26-season">Trios projetés NHL.com</a>
+<a href="https://www.nhl.com/news/nhl-lineup-projections-2025-26-season">Trios projetés NHL.com</a>
     </footer>
 
-    <script src="app.js" defer></script>
+    <script src="app.js?v=nav-v10" defer></script>
   </body>
 </html>

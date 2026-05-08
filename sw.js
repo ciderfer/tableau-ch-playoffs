@@ -3,8 +3,10 @@
  *
  * Strategy:
  *  - Pre-cache the static shell on install (HTML, CSS, JS, icons, background).
- *  - Stale-while-revalidate same-origin GETs so the app loads instantly and
- *    new versions roll in on the next visit.
+ *  - Network-first navigations so users see the latest HTML immediately,
+ *    with cached shell fallback for offline use.
+ *  - Stale-while-revalidate same-origin assets so the app loads instantly and
+ *    new asset versions roll in on the next visit.
  *  - Bypass entirely for the Netlify function so live NHL data is never
  *    served from cache; the front-end's adaptive polling and ETag handling
  *    already manage freshness.
@@ -12,12 +14,12 @@
  *    the browser HTTP cache and CDNs handle those better than we can.
  */
 
-const CACHE_VERSION = "tableau-ch-v2";
+const CACHE_VERSION = "tableau-ch-v10";
 const SHELL_ASSETS = [
   "./",
   "./index.html",
-  "./app.js",
-  "./styles.css",
+  "./app.js?v=nav-v10",
+  "./styles.css?v=nav-v10",
   "./manifest.json",
   "./assets/icon.svg",
   "./assets/icon-192.png",
@@ -66,6 +68,18 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith(
     caches.open(CACHE_VERSION).then(async (cache) => {
+      if (request.mode === "navigate") {
+        try {
+          const response = await fetch(request);
+          if (response && response.ok && response.type === "basic") {
+            cache.put(request, response.clone()).catch(() => {});
+          }
+          return response;
+        } catch {
+          return (await cache.match(request)) || cache.match("./index.html");
+        }
+      }
+
       const cached = await cache.match(request);
       const networkFetch = fetch(request)
         .then((response) => {
